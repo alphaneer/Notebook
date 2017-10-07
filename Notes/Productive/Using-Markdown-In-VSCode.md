@@ -47,6 +47,43 @@ comments: true
 | ctrl + w          | 关闭编辑窗口                 |
 | ctrl + 1 / 2 /3   | 切换编辑窗口                 |
 
+## 编辑器自定义
+
+### 字体修改
+
+字体分为markdown预览字体效果和编辑器字体效果。如果作为一个纯英文写作者，其实我也没有啥好纠结的，但是目前写作还是需要靠中文表达观点，所以就只能对编辑器字体做一些微小的工作了。对于Windows用户来说，可以设置成YaHei-Consolas-Hybrid，这是雅黑和Consolas的合并字体，中西文都有很好的显示效果。 字体大小，我设置成了16，毕竟老年人，视力不太好。
+
+### 我的设置
+
+以下是我编辑器的自定义的设置，包括插件修改部分。
+
+```json
+{
+    "vim.disableAnnoyingNeovimMessage": true,
+    "workbench.colorTheme": "Solarized Dark",
+    "pasteImage.path": "../../Pictures",
+    "markdownlint.config": {
+        "MD013": false,
+        "MD007": false,
+        "MD004": false,
+        "MD010": false
+    },
+    "window.zoomLevel": 1,
+    "[markdown]": {
+        "editor.quickSuggestions": true
+    },
+    "markdown-preview-enhanced.imageFolderPath": "../../Pictures",
+    "qiniu.enable": true,
+    "qiniu.AccessKey": "***************************************",
+    "qiniu.SecretKey": "***************************************",
+    "qiniu.bucket": "hoptop",
+    "qiniu.domain": "oex750gzt.bkt.clouddn.com",
+    "files.eol": "\n",
+    "editor.fontFamily": "YaHei-Consolas-Hybrid, Consolas, 'Courier New', monospace",
+    "editor.fontSize": 16
+}
+```
+
 ### 插件安装方法：
 
 先用快捷键`ctrl + shift + X`调出插件安装界面后搜索插件，选择合适插件进行安装，比如说安装一个数学符号支持插件。
@@ -156,3 +193,9 @@ comments: true
 ![2017-10-01-19-26-48](../../Pictures/2017-10-01-19-26-48_26m8oqr19.png)
 
 然后使用快捷键`ctrl + Q n` 将图片进行复制，就可用返回URL。依旧不太方便呀。
+
+### evermonkey
+
+印象猿，evermonkey，是一款印象笔记的第三方编辑插件，支持同步markdown笔记到印象笔记。
+
+然而目前EverNote暂不支持Tokens，所以还是继续用为github同步我的笔记
