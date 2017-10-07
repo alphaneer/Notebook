@@ -1,0 +1,144 @@
+---
+title: "R for Data Science"
+author: "xuzhougeng"
+date: "2017/8/30"
+output:
+  html_document: default
+  pdf_document:
+    includes:
+      in_header: header.tex
+    keep_tex: yes
+    latex_engine: xelatex
+  word_document: default
+---
+
+# 数据转换
+## 前置需求
+数据为2013年纽约航班起飞情况
+```{r prerequisites, echo=FALSE, message=FALSE}
+#install.packages("nycflights13")
+library(nycflights13)
+library(tidyverse)
+```
+其中`flights`包含336,776飞机起飞情况, `flihgts`是一类`tibble`对象，数据结构类似于关系型数据库。
+```{r flights}
+flights
+```
+
+## dplyr 基础
+dplyr处理数据最常用的函数如下
+- 根据数值挑选观测`filter()`
+- 列重拍`arrange()`
+- 挑选变量`select()`
+- 根据已有变量创建新变量`mutate()`
+- 描述性分析`summarise()`
+
+这些函数都可以与`group_by()`一起使用，用于分组运算。
+
+### 过滤行（观测）
+利用`filter()`选择自己需要的数据，比如一月一日的航班, 或者圣诞节前后几天的航班
+```{r filter}
+jan1 <- filter(flights, month ==1, day==1)
+(des25 <- filter(flights, month == 12, day >=20 & day <= 30))
+```
+
+`dplyr`允许的逻辑操作符： `| & ! xor %in%`
+对于缺失值，也就是NA， 任何比较操作都没有意义，会被直接过滤掉，只能用`is.na()`进行判别, 
+```{r missing_values}
+df <- tibble(x = c(1, NA, 3))
+filter(df, x> 1)
+filter(df, x> 1 | is.na(x))
+```
+
+### 排序（变量）
+arrange不不同于filter的筛选，它的功能是修改排序。缺失值放在最后。
+
+```{r}
+arrange(flights, year, month, day)
+arrange(flights, desc(arr_delay))
+```
+
+### 选择列
+大部分分析场景不需要用到全部的原始数据，只需要其中几行。`select`可以选择根据列名和范围选取，也可用反向选取.还提供了一系列函数`starts_with, ends_with, contains, matches, num_range`等选取某一类.选取的同时可以修改变量名，也可以用`rename`来重命名.
+```{r select}
+select(flights, year,month,day)
+select(flights, dep_time:arr_time)
+select(flights, -(dep_time:arr_time))
+select(flights, ends_with("delay"))
+rename(flights, Year=year)
+```
+可以用`one_of`选择提供的变量名
+```{r}
+vars <- c("year", "month", "day", "dep_delay", "arr_delay")
+select(flights, one_of(vars))
+```
+
+### 新增变量
+`mutate`能够根据已有变量在原始数据后增加新的变量。
+
+```{r mutate}
+flights_sml <- select(flights, year:day, ends_with("delay"), distance, air_time)
+fff <- mutate(flights_sml, gain = arr_delay - dep_delay, speed = distance / air_time * 60)
+```
+如果仅仅想保留新增的变量，则使用`transmute`
+
+
+### 描述性分析
+`summarise`通过描述性统计分析将多行数据总结成单行。比如说计算平均延迟时间
+
+```{r}
+summarise(flights, delay = mean(dep_delay, na.rm = TRUE))
+```
+
+描述性分析常常和分组`group_by()`搭配使用。比如说分析不同时期的延迟时间
+```{r, echo=TRUE, message=TRUE}
+by_day <- group_by(flights, year, month, day)
+summarise(by_day, delay = mean(dep_delay, na.rm=TRUE))
+flights %>% 
+  group_by(year, month) %>%
+  summarise(delay = mean(dep_delay, na.rm=TRUE))
+
+```
+
+
+## 组合使用
+dplyr提供了`%>%`， 类似于Unix的管道符号`|`， 可以把上面提到的`filter`, `select`,`arange`,`mutate`, `summarise`, `group_by`合并到一个流程使用，提高了内存使用效率。
+
+```{r pipe}
+delay <- flights %>%
+  group_by(dest) %>%
+  summarise(count = n(),
+            dist = mean(distance, na.rm =TRUE),
+            delay = mean(arr_delay, na.rm= TRUE)) %>%
+  filter(delay, count > 20, dest != "HNL")
+  
+```
+
+处理完毕的数据可以用`ggplot2`可视化
+```{r}
+ggplot(data = delay, mapping = aes(x=dist, y= delay)) + 
+  geom_point(aes(size=count), alpha = 1/3) +
+  geom_smooth(se = FALSE)
+
+```
+
+## 其他
+缺失值：对于缺失值，大部分的函数所采取的策略是不处理，或者是用`na.rm`在计算过程中忽略。你可以选择用`!is.na()`将NA剔除，或者进行多重插值处理
+计数：在聚合运算时，建议用`n()`或`sum(!is.na(x))`记录你每一组数据的大小，样本过少情况下的结论意义不大。
+
+# 数据整理
+整齐的数据总是一致的，而乱糟糟的数据各有各的乱法。一旦将数据整理成合适的格式，后续就能非常轻松的将其规整化成其他格式。
+
+## tidy datasets
+
+整齐的数据集符合如下三个要求:
+- 每一类变量有单独的列；
+- 每一类观测有单独的行；
+- 每个值都有各自的位置
+
+![](http://r4ds.had.co.nz/images/tidy-1.png)
+
+
+
+
+

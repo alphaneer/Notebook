@@ -1,0 +1,58 @@
+---
+title: "shinyApps"
+author: "xuzhougeng"
+date: "2017/08/31"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Shiny使用HTML模板
+从前端角度上，shiny的工作其实是将R中的ui设计翻译成HTML，并在其中增加后台运行的结果。
+体现在HTML就是两类属性：
+- 输入：`name="inputId"`
+- 输出：`id="outpuId"`
+
+shiny的HTML模板使用方法类似于Python的Jinja2，需要新建一个`template.html`，一般存放位置与`ui.r`所在的同级目录下，内容为
+```html
+<!DOCTYPE html>
+<!-- template.html -->
+<html>
+  <head>
+    {{ headContent() }}
+  </head>
+  <body>
+    <div>
+      {{ button }}
+      {{ slider }}
+    </div>
+  </body>
+</html>
+```
+`ui.R`以`htmlTemplate`读取
+```{r ui.r, message=FALSE}
+require(shiny)
+ui <- htmlTemplate("D:/shinyApp/TF_map_xzg/template.html",
+                   button = actionButton("action", "Action"),
+                   slider = sliderInput("x","X", 1, 100, 50))
+
+server <- function(input, output){}
+shinyApp(ui, server)
+```
+
+注意点：
+1. `{{ }}` 区域会被htmlTemplate替换成对应的内容。
+2. 模板中可以是函数，也可用是变量
+3. shiny插件其实是将js库封装成R包，并提供对应的API，因此模板自行添加的js库可能会与shiny插件冲突。解决方案是`{{ suppressDependencies("packages") }}`
+
+常用模块：
+- {{ headContent() }} shiny 基本Web依赖库
+- {{ bootstrapLib() }} Bootstrap 依赖库
+
+
+
+

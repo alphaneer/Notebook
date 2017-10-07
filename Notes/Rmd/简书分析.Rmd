@@ -1,0 +1,59 @@
+---
+title: "what-i-do"
+author: "xuzhougeng"
+date: "2017年9月3日"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### 从数据库加载数据
+数据来源自Python爬虫， 使用`Encoding`处理编码问题
+```{r}
+require(RMySQL)
+
+con <- dbConnect(RMySQL::MySQL(), 
+                 host="localhost", 
+                 user="root", 
+                 port=3306,
+                 password="zhutou2008", 
+                 dbname="jianshu")
+tables <- dbReadTable(con, 'master')
+Encoding(tables$title) <- "UTF-8"
+```
+
+### 分析写作频率
+其实就是统计不同时间区间文章数量
+```{r}
+require(tidyverse)
+time_matrix <- str_match(tables$time, '(\\d+-\\d+-\\d+)T(\\d{2}):(\\d{2})')
+time_matrix <- as.tibble(time_matrix)
+colnames(time_matrix) <- c('date','ymd','hour','minutes')
+time_matrix$ymd <- as.Date(time_matrix$ymd)
+
+month_df <- time_matrix %>% mutate(ym = str_c(str_sub(ymd, 1,7),'-01')) %>% group_by(ym) %>% summarise(articles=n()) %>% ungroup() %>% mutate(ym=as.Date(ym, "%Y-%m-%d"))
+p1 <- ggplot(month_df, aes(x=ym,y=articles)) + geom_bar(stat = "identity")
+# 添加数据标签
+p1 + geom_text(aes(label=articles), vjust=1.5, colour="white")
+```
+
+## 分析文章发布的时间
+```{r}
+day_df <- time_matrix %>% group_by(hour) %>% summarise(hours=n())
+ggplot(day_df, aes(x=hour, y=hours)) + geom_bar(stat="identity") + geom_text(aes(label=hours), vjust=-1.5) + ylim(0,20)
+```
+
+## 标题分析
+
+```{r}
+require(jiebaR)
+require(wordcloud2)
+cutter <- worker()
+words <- cutter <= tables$title
+word_tb <- filter_segment(words, c("的","组","更","的","在","和"))
+word_tb <- table(word_tb)
+wordcloud2(word_tb, size=0.5, shape='cardioid')
+```
+
