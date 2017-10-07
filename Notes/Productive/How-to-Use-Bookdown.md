@@ -19,8 +19,13 @@ comments: true
 		* [基础Markdown语法](#Basic)
 		* [bookdown扩充语法](#Expand)
 			* [特殊标题 (Special Header)](#SHeader)
-			* [引用](#reference)
-	* [关于图片和表格](#关于图片和表格)
+			* [索引](#reference)
+				* [章节索引](#章节索引)
+				* [图表索引](#图表索引)
+	* [排版](#typeset)
+		* [目录索引](#目录索引)
+		* [关于图片和表格](#关于图片和表格)
+		* [关于字体](#关于字体)
 
 <!-- /code_chunk_output -->
 
@@ -83,7 +88,7 @@ language:
 
 还可以插入链接`[github](www.github.com)`, 插入图片也没有问题`![](path/to/image)`. 如果你对脚注有需求(`^[脚注]`)，就是这个效果^[脚注]。
 
-第二类是**区块格式**，比如说不同级别的标题，有序列表和无序列表，引用， 代码块用三个反引号(`)开始和结束。
+第二类是**区块格式**，比如说不同级别的标题，有序列表和无序列表，索引， 代码块用三个反引号(`)开始和结束。
 
 ```markdown
 # 一级标题
@@ -104,7 +109,7 @@ language:
 2. 第二
 3. 第三
 
-> 这是一个引用
+> 这是一个索引
 ```
 
 第三类是数学公式。如果单独成行，就是用两个美元(\$)开始和结束。如果是行内的数学公式，就只要一个美元符合(\$),如 $\sum_a^b$。
@@ -119,6 +124,8 @@ x_{21} & x_{22} & x_{23}
 ```
 
 至于如何写数学公式，请自行百度Latex数学公式。
+
+更多Pandoc的markdown语法见官方文档^[<http://pandoc.org/MANUAL.html#pandocs-markdown>]
 
 ### bookdown扩充语法 {#Expand}
 
@@ -136,24 +143,38 @@ x_{21} & x_{22} & x_{23}
 # (APPENDIX) 附录{-}
 ```
 
-#### 引用 {#reference}
+#### 索引 {#reference}
 
-引用分为多种，包括但不限于如下类型：
+索引分为多种，包括但不限于如下类型：
 
-- 公式引用
-- 图表引用
-- 文献引用
-- 章节引用
+- 公式索引
+- 图表索引
+- 文献索引
+- 章节索引
 
-先介绍一下**章节引用**。数字图书的一大优点在于能够快速跳转章节。Pandoc会自动为每一个标题都生成一个索引ID，当然也可用在标题后添加`{#id}`手动添加。
+##### 章节索引 {-}
 
-**图标引用**: 当代码块中增加量`fig.cap=foo`，那么就会被加入figure envirnoment.
+Pandoc会自动根据标题(章节, chapter and section)产生标识符号，当然最好是自己手动在标题后添加`{#id}`。
 
-```markdown
-\```{r foo, fig.cap='(ref:foo)'}
+如果需要索引数字，则是`\@ref(ID)`;如果以标题作为跳转文字，那么`[section header text]`就行; 如果要自定义跳转文字，则是`[link text](#ID)`.
+
+##### 图表索引 {-}
+
+图表索引分为两种情况，是R运行时产生，还是从外部添加。
+
+如果来自于代码运行，那么当代码块中增加量`fig.cap=foo`，那么就会被加入figure envirnoment.
+
+> 作图
+\`\`\`{r foo, fig.cap='(ref:foo)'}
 plot(cars)  # a scatterplot
-\```
-```
+\`\`\`
+> 表格
+\`\`\`
+knitr::kable(
+head(mtcars[, 1:8], 10), booktabs = TRUE,
+caption = 'A table of the first 10 rows of the mtcars data.'
+)
+\`\`\`
 
 之后就可用`\@ref(fig:foo)`或者`(ref:foo)`进行索引。
 
@@ -162,9 +183,25 @@ plot(cars)  # a scatterplot
 \@ref(fig:foo) Define a text reference **here**
 ```
 
-## 关于图片和表格
+**公式索引**偏向数学，目前用不到，暂时不写。
 
-在我用LaTex排版的那段岁月中，我遇到的最蛋疼的问题有以下两个：
+## 排版 {#typeset}
+
+### 目录索引
+
+bookdown和gitbook相同，虽然编号在目录中最多出现三级，也就是`1.1.1`，但是文章中却可以有N多层**梦境**，出现3级以上的数字索引简直就是梦魇。
+
+![](../../Pictures/header_reference.png)
+
+超过三级以上的数字索引既不美观也无必要，我们仅仅需要它的层级效果，而不是无穷无尽的编号。
+
+解决方案在之前已经出现过了，就是在标题后添加`{-}`, 就将标题从数字索引空间中剔除了。如果是`{#ID -}`，效果就是删除对章节的数字索引，但还能通过`[section](#ID)`进行跳转。这是因为`-`等价于`.unnumbered`，pandoc在转换的时候会添加该属性。
+
+![](../../Pictures/header_reference_exclude_number.png)
+
+### 关于图片和表格
+
+在我用LaTex排版的那段岁月中，我遇到的最蛋疼的问题就是**浮动**：
 
 1. 表格不幸的排到一页中的后半部分，结果太长放不完，于是被分割成了两部分
 1. 图片不幸的排到一页中的后半部分，结果太长放不下，于是只能另起一页
@@ -178,3 +215,5 @@ plot(cars)  # a scatterplot
 但是都不如`knitr::include_graphics()`简单，可以根据输出自动调整图片导入方式；继承了之前所说的控制图片参数；还能机智地选择是否用pdf格式图片作为输入。
 
 表格的处理方法也很简单粗暴，`knitr::kable()`搞定一切。`longtable`对应LaTex的`\usepackage{longtable}`，长表格就不再是问题了。
+
+### 关于字体
