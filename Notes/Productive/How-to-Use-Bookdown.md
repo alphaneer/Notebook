@@ -112,7 +112,7 @@ language:
 > 这是一个索引
 ```
 
-第三类是数学公式。如果单独成行，就是用两个美元(\$)开始和结束。如果是行内的数学公式，就只要一个美元符合(\$),如 $\sum_a^b$。
+第三类是**数学公式**。如果单独成行，就是用两个美元(\$)开始和结束。如果是行内的数学公式，就只要一个美元符合(\$),如 $\sum_a^b$。
 
 当然你还可以像latex那样使用数学公式。
 
@@ -147,10 +147,11 @@ x_{21} & x_{22} & x_{23}
 
 索引分为多种，包括但不限于如下类型：
 
-- 公式索引
-- 图表索引
-- 文献索引
 - 章节索引
+- 图表索引
+- 文本复用
+- 公式索引
+- 文献索引
 
 ##### 章节索引 {-}
 
@@ -162,26 +163,43 @@ Pandoc会自动根据标题(章节, chapter and section)产生标识符号，当
 
 图表索引分为两种情况，是R运行时产生，还是从外部添加。
 
-如果来自于代码运行，那么当代码块中增加量`fig.cap=foo`，那么就会被加入figure envirnoment.
+默认情况下图和表都是没有标题(caption)，也就不会被加入图环境(figure environment)，也就不会被自动标记和计数(labeled and numbered).
 
 > 作图
-\`\`\`{r foo, fig.cap='(ref:foo)'}
+
+因此对于图而言，R产生的图需要在代码块(code chunk)中增加`fig.cap`以及前面的代码块标记，比如说 _fig-foo_。 如果外部图片，则用`knitr::include_graphics()`导入图片，那么也相当于是R在运行时产生的图片。
+
+之后就能以`\@ref(fig:fig-foo)`形式引用该图片
+
+````markdown
+# R plot
+```{r fig-foo, fig.cap='mtcars'}
 plot(cars)  # a scatterplot
-\`\`\`
+```
+# out images
+# 导入图片的代码不需要显示，也就是echo=FALSE
+```{r fig-out, fig.cap='out figure',echo=FALSE}
+knitr::include_graphics("path/to/figure")
+```
+````
+
+![](../../Pictures/figure_reference.png)
+
 > 表格
-\`\`\`
+
+对于表格而言，要想对它们进行索引，那就只能用到`knitr::kable()`了。也就是说外部表格数据可以先输入成matrix, data.frame形式，然后就变成了R里面的数据如何以表格形式展现。最后的答案都是`knitr::kable()`.
+
+````markdown
+# 导入表格的代码不需要显示，也就是echo=FALSE
+```{r mtcars, echo=FALSE}
 knitr::kable(
 head(mtcars[, 1:8], 10), booktabs = TRUE,
 caption = 'A table of the first 10 rows of the mtcars data.'
 )
-\`\`\`
-
-之后就可用`\@ref(fig:foo)`或者`(ref:foo)`进行索引。
-
-```rmarkdown
-(ref:foo) Define a text reference **here**
-\@ref(fig:foo) Define a text reference **here**
 ```
+````
+
+![](../../Pictures/table_reference.png)
 
 **公式索引**偏向数学，目前用不到，暂时不写。
 
