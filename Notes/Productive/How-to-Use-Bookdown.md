@@ -22,6 +22,8 @@ comments: true
 			* [索引](#reference)
 				* [章节索引](#章节索引)
 				* [图表索引](#图表索引)
+				* [文本复用](#文本复用)
+				* [文献索引](#文献索引)
 	* [排版](#typeset)
 		* [目录索引](#目录索引)
 		* [关于图片和表格](#关于图片和表格)
@@ -200,6 +202,10 @@ caption = 'A table of the first 10 rows of the mtcars data.'
 ````
 
 ![](../../Pictures/table_reference.png)
+
+##### 文本复用 {-}
+
+##### 文献索引 {-}
 
 **公式索引**偏向数学，目前用不到，暂时不写。
 
