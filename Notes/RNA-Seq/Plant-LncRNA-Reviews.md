@@ -17,7 +17,6 @@ comments: true
 	* [背景介绍](#Introduction)
 	* [研究进展](#Advance)
 	* [植物lncRNA的分子功能](#植物lncrna的分子功能)
-	* [分析流程](#Pipeline)
 
 <!-- /code_chunk_output -->
 
@@ -95,29 +94,15 @@ f. lncRNA能与一些染色质重构蛋白和染色质区域互作，从而影�
 
 lncRNAs| 描述 | 参考文献
 ---------|----------|---------
- ASCO-lncRNA | B1 | ^[Long noncoding RNA modulates alternative splicing regulators in Arabidopsis]
- IPS1 | B2 | ^[Target mimicry provides a new mechanism for regulation of microRNA activity]
- HID1 | B3 | ^[]
- COOLAIR | B3 | ^[]
- COLDAIR | B3 | ^[]
- COLDWRAP | B3 | ^[]
- ASL | B3 | ^[]
- APOLO | B3 | ^[]
- Pol IV transcripts| B3 | ^[]
- Pol V transcripts | B3 | ^[]
- ENOD40 | B3 | ^[]
- LDMAR  |    | ^[]
- 
-## 分析流程 {#Pipeline}
-
-非编码RNA数据分析分为以下几步：
-
-1. 测序数据质量控制
-1. 参考基因组（转录组）比对
-1. lncRNA _de novo_ 发现
-1. lncRNA 表达水平计数
-1. 找到差异表达的lncRNA
-1. lncRNA功能分析
-1. lncRNA-mRNA 共表达网络(co-expression network)
-1. lncRNA-miRNA 互作分析
-1. 组蛋白修饰和lncRNA表达
+ ASCO-lncRNA | Functions in lateral root development in Arabidopsis. Regulator of alternative splicing. Works as a decoy lncRNA | ^[Long noncoding RNA modulates alternative splicing regulators in Arabidopsis]
+ IPS1 | Functions in regulating phosphate balance and phosphate starvation response in Arabidopsis. Competes with PHO2 mRNA for interaction with miR399 and acts as non-cleavable miRNA target | ^[Target mimicry provides a new mechanism for regulation of microRNA activity]
+ HID1 | Functions in regulation of photomorphogenesis in Arabidopsis seedlings. Trans-acting lncRNA (236 nt) acts by associating with the PIF3 promoter and represses its transcription. Evolutionary conserved in land plants | ^[Arabidopsis noncoding RNA mediates control of photomorphogenesis by red light]
+ COOLAIR | Functions in regulation of flowering in Arabidopsis in both vernalization and autonomous pathways. Modulates FLC expression by multiple mechanisms | ^[Cold-induced silencing by long antisense transcripts of an Arabidopsis polycomb target.]
+ COLDAIR | Functions in regulation of flowering in Arabidopsis in the vernalization pathway. Associates with Polycomb to mediate silencing of FLC and affects chromatin looping at FLC in response to vernalization | ^[Vernalization-mediated epigenetic silencing by a long intronic noncoding RNA. Science]
+ COLDWRAP | Functions in regulation of flowering in Arabidopsis in the vernalization pathway. Participates in and coordinates vernalization-mediated Polycomb silencing of the FLC. Also affects formation of an intragenic chromatin loop that represses FLC | ^[Vernalization-triggered intragenic chromatin loop formation by long noncoding RNAs]
+ ASL | Functions in regulation of flowering in the autonomous pathway in Arabidopsis. AtRRP6L regulates ASL to modulate H3K27me3 levels. |^[Arabidopsis RRP6L1 and RRP6L2 function in FLOWERING LOCUS C silencing via regulation of antisense RNA synthesis.]
+ APOLO | Functions in regulation of auxin signaling outputs in Arabidopsis. Participates in chromatin loop dynamics. Affects formation of a chromatin loop in the PID promoter region | ^[Noncoding transcription by alternative RNA polymerases dynamically regulates an auxin-driven chromatin loop.]
+ Pol IV transcripts| Technically shorter in length than the standard lncRNAs. Function in silencing of transposons (TEs) and repeats in RdDM pathway. Serve as precursors for siRNAs in RdDM pathway | ^[Detection of Pol IV/RDR2-dependent transcripts at the genomic scale in Arabidopsis reveals features and regulation of siRNA biogenesis]
+ Pol V transcripts | Function in silencing TEs and repeats in RdDM pathway. Serve as a scaffold lncRNAs for assembly of siRNAs and proteins in RdDM pathway | ^[Long non-coding RNA produced by RNA polymerase V determines boundaries of heterochromatin.]
+ ENOD40 | Functions in regulation of symbiotic interactions between leguminous plants and soil bacteria in Medicago truncatula. Suggested to function in re-localization of proteins in plants | ^[Enod40, a short open reading frame-containing mRNA, induces cytoplasmic localization of a nuclear RNA binding protein in Medicago truncatula.]
+ LDMAR  | Regulates photoperiod-sensitive male sterility in rice by affecting DNA methylation in the LDMAR promoter region. The precise mechanism of LDMAR function and the interaction between LDMAR and siRNAs remain to be clarified   | ^[long noncoding RNA regulates photoperiod-sensitive male sterility, an essential component of hybrid rice]
