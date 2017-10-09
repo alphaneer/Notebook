@@ -17,6 +17,7 @@ comments: true
 	* [背景介绍](#Introduction)
 	* [研究进展](#Advance)
 	* [植物lncRNA的分子功能](#植物lncrna的分子功能)
+	* [其他](#其他)
 
 <!-- /code_chunk_output -->
 
@@ -106,3 +107,7 @@ lncRNAs| 描述 | 参考文献
  Pol V transcripts | Function in silencing TEs and repeats in RdDM pathway. Serve as a scaffold lncRNAs for assembly of siRNAs and proteins in RdDM pathway | ^[Long non-coding RNA produced by RNA polymerase V determines boundaries of heterochromatin.]
  ENOD40 | Functions in regulation of symbiotic interactions between leguminous plants and soil bacteria in Medicago truncatula. Suggested to function in re-localization of proteins in plants | ^[Enod40, a short open reading frame-containing mRNA, induces cytoplasmic localization of a nuclear RNA binding protein in Medicago truncatula.]
  LDMAR  | Regulates photoperiod-sensitive male sterility in rice by affecting DNA methylation in the LDMAR promoter region. The precise mechanism of LDMAR function and the interaction between LDMAR and siRNAs remain to be clarified   | ^[long noncoding RNA regulates photoperiod-sensitive male sterility, an essential component of hybrid rice]
+
+## 其他
+
+植物LincRNA研究可以关注蔡南海实验室
