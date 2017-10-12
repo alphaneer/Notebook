@@ -32,7 +32,7 @@ comments: true
 - 高通量短读比对(Short Reads Alignment)，如BWA, HISAT2，SOAP
 - 高通量长读比对(Long Reads Alignment), 如GMAP. STARlong
 
-## 配对序列联配 {#PairwiseAlignment}
+## 基础：配对序列联配 {#PairwiseAlignment}
 
 最简单的情形是，你手头有两条序列，你想知道这两条序列的关系，也就是这两条序列在进化上的联系，也就是**同源性**(homology).当然，同源还能继续分为以下两种：
 
@@ -72,6 +72,7 @@ for (i in 1:length(seq.x)){
      }
   }
 }
+# 用matrix形式进行展示
 dot.matrix
    A  T  C  G  G  C  T  A  G
 T NA  1 NA NA NA NA  1 NA NA
@@ -83,11 +84,8 @@ C NA NA  1 NA NA  1 NA NA NA
 T NA  1 NA NA NA NA  1 NA NA
 A  1 NA NA NA NA NA NA  1 NA
 G NA NA NA  1  1 NA NA NA  1
-```
 
-先将矩阵以(x,y)的形式转换，使其符合`tidyverse`
-
-```r
+# 先将矩阵以(x,y)的形式转换，使其符合`tidyverse`
 seq_mt <- matrix(data=NA, nrow=length(seq.x)*length(seq.y), ncol=2)
 flag = 1
 for (i in 1:nrow(dot.matrix)){
@@ -101,15 +99,25 @@ for (i in 1:nrow(dot.matrix)){
 
 }
 
+# ggplot作图
 seq_df <- na.omit(as.data.frame(seq_mt))
 colnames(seq_df) <- c("x","y")
-
+library(ggplot2)
 ggplot(seq_df, aes(x=x,y=y)) + geom_point(size=5) +
   scale_x_continuous(breaks = 1:9, labels = seq.x) +
   scale_y_continuous(breaks = 1:9, labels = seq.y)
 ```
 
 ![](../../Pictures/dot_matrix_plot.png)
+
+当然实际的序列会更长也更复杂，会存在大量背景噪音(noise)，常用的方式是利用重叠且固定长度的窗口(slide window)根据最低的一致度进行筛选。虽然点阵图能比较直观展示序列间的相似性，但它无法告诉我们序列到底应该如何联配。给定两条序列，如果允许插入和缺失(indel)，会有多种可选的联配结果，从中选择最优联配需要用到得分矩阵(score matrix)用于对联配碱基赋值和惩罚矩阵用于对空缺进行惩罚。
+
+得分矩阵也称替换矩阵，表示为4X4(核苷酸)或20X20的记分矩阵，。目前比较常用的替换概率矩阵如下：
+
+- PAM: 用于探索蛋白质进化起源
+- BLOSUM：寻找保守的蛋白质区域
+
+## 动态规划算法 {#DPA}
 
 ## 数据库搜索 {#DatabasesSearch}
 
