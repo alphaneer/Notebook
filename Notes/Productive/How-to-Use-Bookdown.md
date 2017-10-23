@@ -241,3 +241,5 @@ bookdown和gitbook相同，虽然编号在目录中最多出现三级，也就�
 表格的处理方法也很简单粗暴，`knitr::kable()`搞定一切。`longtable`对应LaTex的`\usepackage{longtable}`，长表格就不再是问题了。
 
 ### 关于字体
+
+### 关于参考文献

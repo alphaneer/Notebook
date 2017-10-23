@@ -58,10 +58,21 @@ comments: true
 
 > 多序列比对一般用于构建进化发育树。
 
-官方提供三种方式使用InterProScan：本地版本，网页服务或网页工具
-
-**网页工具**为<http://www.ebi.ac.uk/interpro/search/sequence-search>， 允许提交长达4000个氨基酸序列的数据。这种方法满足基础使用。
-
-**网页服务**则是使用RESTful, 向服务器提供工作（每次不超过30项），中等规模的数据访问。
+### 超强工具：interproscan
 
 **本地服务**需要下载大于5.2G的软件，且要求Linux 64位系统， Perl, Python 2.7.x 以及Java8。**使用方法**为`./interproscan.sh`, 根据提示选择子功能。大规模数据分析。
+
+安装前先进行检查
+
+```shell
+uname -a
+perl -version
+python --version
+java -version
+```
+
+使用说明：
+
+### 可视化工具
+
+交互式序列标记（logo）展示：<http://skylign.org/>
