@@ -14,9 +14,11 @@ comments: true
 <!-- code_chunk_output -->
 
 * [序列比对软件的比较和思考](#序列比对软件的比较和思考)
-  * [配对序列联配](#PairwiseAlignment)
-    * [点阵图分析](#dotMatrix)
-    * [数据库搜索](#DatabasesSearch)
+	* [基础：配对序列联配](#PairwiseAlignment)
+		* [点阵图分析](#dotMatrix)
+	* [动态规划算法](#DPA)
+	* [数据库搜索](#DatabasesSearch)
+	* [高通量短读比对](#高通量短读比对)
 
 <!-- /code_chunk_output -->
 
@@ -122,3 +124,15 @@ ggplot(seq_df, aes(x=x,y=y)) + geom_point(size=5) +
 ## 数据库搜索 {#DatabasesSearch}
 
 数据库搜索估计是目前
+
+## 高通量短读比对
+
+在过去的十几年里，随着高通量测序(HTS)成本降低，出现了各种测序概念, DNA-Seq, ChIP-Seq, RNA-Seq, BS-Seq覆盖了研究领域的方方面面。随着而来的问题是，如何把这些短片段**快速且准确**地回贴到参考基因组上。
+
+2012年 _Bioinformatics_ 有一篇文章^[Tools for mapping high-throughput sequencing data ]综述了目前高通量数据的比对软件，并且建立主页<https://www.ebi.ac.uk/~nf/hts_mappers/>罗列并追踪目前的比对软件。
+
+![](../../Pictures/mappers_timeline.jpeg)
+
+尽管看起来有那么多软件，但是实际使用就那么几种，BWA(傲视群雄), TopHat(尽管官方都建议用HISAT2，还是那么坚挺), SOAP(架不住华大业务多)。 Blat和Mummer3只能短读长序列比对功能，应该不能归为高通量一行。这些软件主要是解决这样一个数学问题：
+
+> 给定一组序列Q(来自于HTS测序仪)和一组参考序列R，以及一些限制条件和距离阈值k， 找到所有R的所有子序列m,使得满足限制条件并且在Q的一个序列q的距离k内， 比如$d(q,m) \le k$, 其中d()为距离函数。R中出现的m称之为**匹配**。
