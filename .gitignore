@@ -4,3 +4,5 @@
 
 # git
 *.git
+# mac
+.DS_Store
