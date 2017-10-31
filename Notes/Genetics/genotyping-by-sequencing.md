@@ -92,6 +92,13 @@ Genotyping-By-Sequencing的pipeline有两类：
 
 基本上都要经过以下几步^[Fast-GBS: a new pipeline for the efficient and highly accurate calling of SNPs from genotyping-by-sequencing data]：1) 获取原始数据, 2) 混池多标签标记的reads数据分离, 3) 过滤低质量reads, 4) 组装或者比对序列, 5) 寻找多态位点并从中找到与表型相关的位点。
 
+### 数据清洗
+
+- 剔除低质量的双端短读（多于50%的低质量碱基）
+- 丢掉可能的重复reads和缺少完整的EcoRI切割位点序列
+
+### Stack tool set
+
 ### 多倍体策略
 
 2012年在Plot Genetics发表了一篇文章，利用UNEAK^[Switchgrass Genomic Diversity, Ploidy, and Evolution: Novel Insights from a Network-Based SNP Discovery Protocol] 分析高度杂合多倍体化且无参考基因组的物种，Switchgrass(_Panicum virgatum_ L.)， 分析框架示意图如下：
