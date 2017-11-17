@@ -1,12 +1,9 @@
 ---
 title: RAD-Seq data analysi 
-date:
-  - 2017/10/23
-tags:
-  - RAD-Seq
-  - Genetics
-categories:
-  - Genetics
+date: 2017/10/23
+tags: RAD-Seq，Genetics
+categories: Genetics
+notebook: 分析流程
 comments: true
 output:
   pdf_document:
