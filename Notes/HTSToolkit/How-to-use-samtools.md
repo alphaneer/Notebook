@@ -111,7 +111,7 @@ ST-E00600:109:H3K5FALXX:2:1103:17996:34788      117     Chr1    38      0       
 ST-E00600:109:H3K5FALXX:2:1103:17996:34788      185     Chr1    38      60      150M    =       38      0       CATTAATCCCTAAATCCCTAAATCTTTAAATCCTACATCCATGAATCCCTAAATAACTAATTCCCTAAACCCGAAACCTGTTTCTCTGGTTGAAAATCATTGTGTATATAATGATAATTTTATCGTTTTTATGTAATTGCTTATTGTTTT  J-JJ7JJJ-JJJ7JJ--JJJ--JJ-JJJJJJ-JJJJJJ--J-JJJJJJJJJ--JJ-JJJJJJJ-JJJJ--J----J-J--JJJJJJ777JJJ77J7JJJJJJJ7JJJJJ7JJJJJ77JJJJJJ7JJ7JJJ7JJJJJJJJJJJJJJFFF<A  NM:i:4  MD:Z:1C53C22G69G1       AS:i:136        XS:i:0
 ```
 
-来一个复杂的例子`69H10M3I31M37H`，表示150bp的读长，先删掉69剪辑，后面是10个匹配，后面相比较参考基因组有3个插入，随后是31个匹配，最后再剔除37个基因,通过IGV查看在参考基因组的情况如下图所示。
+来一个复杂的例子`69H10M3I31M37H`，表示150bp的读长，先删掉69个碱基，后面是10个匹配，后面相比较参考基因组有3个插入，随后是31个匹配，最后再剔除37个基因,通过IGV查看在参考基因组的情况如下图所示。
 
 ![](http://oex750gzt.bkt.clouddn.com/17-11-16/41577642.jpg)
 
@@ -119,7 +119,7 @@ ST-E00600:109:H3K5FALXX:2:1103:17996:34788      185     Chr1    38      60      
 
 ![](http://oex750gzt.bkt.clouddn.com/17-11-16/99525317.jpg)
 
-实际上，CIGAR一共有9个字符，分别是M(alignment match),I(insertion),D(deletion),N(skip),S(soft clip),H(hard clip),P(padding),=(sequence match), X(sequence mismatch).值得提醒就是M表示序列能够联配，但是存在碱基不一致，=表示碱基仙童。S和H一般用于read前后出现大部分的错配，但是中间能够联配的情况，其中S表示序列会出现在SEQ中，H则不会出现在SEQ列中。
+实际上，CIGAR一共有9个字符，分别是M(alignment match),I(insertion),D(deletion),N(skip),S(soft clip),H(hard clip),P(padding),=(sequence match), X(sequence mismatch).值得提醒就是M表示序列能够联配，但是存在碱基不一致，=表示碱基相同。S和H一般用于read前后出现大部分的错配，但是中间能够联配的情况，其中S表示序列会出现在SEQ中，H则不会出现在SEQ列中。
 
 ## 使用SAMtools对SAM文件进行操作
 
