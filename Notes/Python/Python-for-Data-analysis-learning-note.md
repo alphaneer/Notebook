@@ -8,6 +8,49 @@ notebook: Python笔记
 
 # Python for Data Analysis 学习笔记
 
+## Python内置数据结构
+
+### 列表和相应的列表函数
+
+Python有一些内置的列表操作函数非常好用，如：
+
+- enumerate： 遍历同时还能进行追踪(trace)
+- sorted： sorted函数能够返回排序后的结果，如果是字符串，则拆成一个个字符排序
+- zip：对多个列表进行配对，返回可迭代对象
+
+案例1： 如何对zip的序列进行解包，并记录。
+
+```Python
+seq1 = ['a','b','c']
+seq2 = ['one','two','thre']
+for i,(a,b) in enumerate(zip(seq1,seq2)):
+    print('{0}:{1},{2}'.format(i,a,b))
+```
+
+案例2: 快速unzip已经zip的列表
+
+```Python
+seq = list(zip(seq1,seq2))
+s1, s2 = zip(*seq)
+```
+
+- reversed: 序列取反 `reversed(list(range(10)))`, 返回可迭代对象
+
+### 字典
+
+字典几乎可以说Python中最重要的一类数据结构，
+
+## 数据读写
+
+数据读写分为两种方式，一种是利用Python自带的方法,一种是利用numpy和pandas提供的函数。这里主要介绍的pandas提供的一系列`read_xxx`工具，用于处理不同格式的文本。使用这些函数主要注意如下4点：
+
+- 索引：是否需要将读取的文本中的某几列当作索引列，也就是行名，以及是否需要列名
+- 类型推理和格式转换：显式或者隐式设置每一列的数据格式
+- 遍历：是否对大文件遍历读取
+- 数据注释： 跳过一些不需要的注视
+
+我们这里读取拟南芥的GFF文件
+
 ## 字符操作
 
 ### Python内置函数
