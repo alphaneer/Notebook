@@ -8,7 +8,7 @@ notebook: 工具笔记
 
 # biopython的学习笔记
 
-本文基于\*nix系统的Python2，但是代码也能在Python3运行。
+本文基于\*nix系统的Python2，但是代码也能在Python3运行，但是。
 
 ## 序列读取
 

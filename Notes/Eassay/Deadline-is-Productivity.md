@@ -1,10 +1,9 @@
 ---
 title: deadline就是生产力
 date: 2017/10/14
-tags:
-  - essay
-categories:
-  - essay
+tags: deadline
+notebook: 随笔几句
+categories: essay
 comments: true
 ---
 

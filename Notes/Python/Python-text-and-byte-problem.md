@@ -45,7 +45,7 @@ UnicodeEncodeError: 'ascii' code can't encode character '\xe9' in position 3: or
 s = 'baozou™'
 len(s) # s有7个unicode字符
 b = s.encode("utf-8") # 用UTF-8编码
-b # b'baozou\xe2\x84\xa2‘ 9个字节
+b # b'baozou\xe2\x84\xa2' 9个字节
 b.decode("utf-8") # 解码成人类可读
 'baozou™'
 ```
@@ -64,4 +64,32 @@ Python3有两种二进制序列类型：不可变的bytes类型和可变的bytea
 
 这就解释前面的'baozou\xe2\x84\xa2'中我们只看到'baozou'，而没有看到'™'。
 
-## 结构化信息提取
+字节对象除了有和字符对象相同的方法，如`startswith,replace`等，还有自带的`decode`方法用于解码。
+
+### 处理二进制数据的标准库
+
+和二进制数据操作有关的标准库有两个
+
+- struct: 主要功能是翻译打包的字节序列，比如说转换成不同类型字段组成的元祖
+- codecs: 解码器，负责字节序列和码位之间的转换，Python自带了100多种解码器。
+
+struct用于自定义二进制数据的解析方式，太过复杂，此处略去。主要介绍一下`codecs`如何使用编解码器以及常用的编码。
+
+目前常用的编码体系如下：
+
+- latin1: 其他编码的基础，例如cp1252,Unicode
+- cp1252: 微软制定的latin1超集，也就是增加了一些有用符号
+- cp437: IBM PC指定的字符集，和latin1不兼容
+- gb2312: 用于编码简体中文，老古董了
+- utf-8: web开发最常见的8位编码格式，与ASCII兼容。
+- utf-16le: 16位编码格式
+
+感受同一个字符串在一下不同编码体系下表现方式
+
+```shell
+for codec in ['latin_1', 'utf_8','utf_16']:
+    print(codec,'hello'.encode(codec), sep="\t")
+# latin_1	b'hello'
+# utf_8	b'hello'
+# utf_16	b'\xff\xfeh\x00e\x00l\x00l\x00o\x00'
+```
