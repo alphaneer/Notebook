@@ -107,15 +107,43 @@ gcc version 4.8.5 20150623 (Red Hat 4.8.5-16) (GCC)
 
 那为何需要配置？配置主要解决软件开发和软件实际安装时平台不同所导致的问题，由于平台不同，开发写的C代码需要。
 
-## 安装zsh
+CFLAGS 表示用于 C 编译器的选项，
+
+CXXFLAGS 表示用于 C++ 编译器的选项。
+
+这两个变量实际上涵盖了编译和汇编两个步骤。
+
+CFLAGS： 指定头文件（.h文件）的路径，如：CFLAGS=-I/usr/include -I/path/include。同样地，安装一个包时会在安装路径下建立一个include目录，当安装过程中出现问题时，试着把以前安装的包的include目录加入到该变量中来。
+
+LDFLAGS：gcc 等编译器会用到的一些优化参数，也可以在里面指定库文件的位置。用法：LDFLAGS=-L/usr/lib -L/path/to/your/lib。每安装一个包都几乎一定的会在安装目录里建立一个lib目录。如果明明安装了某个包，而安装另一个包时，它愣是说找不到，可以抒那个包的lib路径加入的LDFALGS中试一下。
+
+LIBS：告诉链接器要链接哪些库文件，如LIBS = -lpthread -liconv
+
+简单地说，LDFLAGS是告诉链接器从哪里寻找库文件，而LIBS是告诉链接器要链接哪些库文件。不过使用时链接阶段这两个参数都会加上，所以你即使将这两个的值互换，也没有问题。
+
+有时候LDFLAGS指定-L虽然能让链接器找到库进行链接，但是运行时链接器却找不到这个库，如果要让软件运行时库文件的路径也得到扩展，那么我们需要增加这两个库给"-Wl,R"：
+
+LDFLAGS = -L/var/xxx/lib -L/opt/mysql/lib -Wl,R/var/xxx/lib -Wl,R/opt/mysql/lib
+
+如果在执行./configure以前设置环境变量export LDFLAGS="-L/var/xxx/lib -L/opt/mysql/lib -Wl,R/var/xxx/lib -Wl,R/opt/mysql/lib" ，注意设置环境变量等号两边不可以有空格，而且要加上引号（shell的用法）。那么执行configure以后，Makefile将会设置这个选项，链接时会有这个参数，编译出来的可执行程序的库文件搜索路径就得到扩展了
+
+参考资料:
+
+- [CFLAGS详解](http://blog.csdn.net/xinyuan510214/article/details/50457433)
+
+## 几个必须要装的标准库
 
 ```shell
-wget -4 -O zsh.targz https://sourceforge.net/projects/zsh/files/latest/download
+wget ftp://ftp.invisible-island.net/ncurses/ncurses.tar.gz && tar -zxvf ncurses.tar.gz
+export CXXFLAGS=" -fPIC"
+export CFLAGS=" -fPIC"
+./configure --enable-shared --prefix=$HOME/usr
+make && make install
 ```
 
-## 安装Tmux
+这里在编译前声明了两个环境变量，这是在安装zsh遇到共享库的问题得到的教训. Linux下编译共享库时，必须加上-fPIC参数，否则在链接时会有错误提示.
 
-准备依赖库
+> fPIC的目的是什么？共享对象可能会被不同的进程加载到不同的位置上，如果共享对象中的指令使用了绝对地址、外部模块地址，那么在共享对象被加载时就必须根据相关模块的加载位置对这个地址做调整，也就是修改这些地址，让它在对应进程中能正确访问，而被修改到的段就不能实现多进程共享一份物理内存，它们在每个进程中都必须有一份物理内存的拷贝。fPIC指令就是为了让使用到同一个共享对象的多个进程能尽可能多的共享物理内存，它背后把那些涉及到绝对地址、外部模块地址访问的地方都抽离出来，保证代码段的内容可以多进程相同，实现共享。
 
 ```shell
 # libevent
@@ -123,19 +151,25 @@ cd src
 wget https://github.com/libevent/libevent/releases/download/release-2.1.8-stable/libevent-2.1.8-stable.tar.gz
 tar -zxvf libevent-2.1.8-stable.tar.gz && cd  libevent-2.1.8
 ./configure prefix=$HOME/usr && make && make install
-# ncurses
-cd src
-wget ftp://ftp.invisible-island.net/ncurses/ncurses.tar.gz
-tar -zxvf ncurses.tar.gz && configure --prefix=$HOME/usr && make && make install
 ```
+
+## 安装zsh
+
+```shell
+wget -O zsh.tar.gz https://sourceforge.net/projects/zsh/files/latest/download
+tar -zxvf zsh.tar.gz && cd zsh
+export CPPFLAGS="-I$HOME/usr/include/" LDFLAGS="-L$HOME/usr/lib"
+../configure --prefix=$HOME/usr --enable-shared
+make && make install
+```
+
+## 安装Tmux
 
 配置环境变量，这些环境变量在configure配置时，成为GCC/CC后面的参数
 
 ```shell
-# ncurses的头文件居然在include/ncurses,
-CPPFLAGS="-I$HOME/usr/include/ncurses"
-CFLAGS="-I$HOME/usr/include"
-LDFLAGS="-L$HOME/usr/lib"
+export CPPFLAGS="-I$HOME/usr/include -I$HOME/usr/include/ncurses"
+export LDFLAGS="-L$HOME/usr/lib -L$HOME/usr/lib64"
 ```
 
 编译tmux
