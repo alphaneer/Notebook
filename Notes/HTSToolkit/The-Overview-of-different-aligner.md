@@ -1,12 +1,9 @@
 ---
 title: 序列比对软件的思考
 date: 2017/10/10
-tags:
-  - HTS
-  - Align
-  - Map
-categories:
-  - HTSToolkit
+tags: HTS, Alignment
+categories: HTSToolkit
+notebook: 生物信息学
 comments: true
 ---
 

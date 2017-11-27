@@ -107,6 +107,20 @@ gcc version 4.8.5 20150623 (Red Hat 4.8.5-16) (GCC)
 
 那为何需要配置？配置主要解决软件开发和软件实际安装时平台不同所导致的问题，由于平台不同，开发写的C代码需要。
 
+## 重要的环境变量
+
+在安装之前需要先声明几个环境变量，可以直接添加在配置文件中。这都是后面遇到共享库的问题得到的经验教训。
+
+```shell
+export LD_LIBRARY_PATH=$HOME/usr/lib:$HOME/usr/lib64
+export CXXFLAGS=" -fPIC"
+export CFLAGS=" -fPIC"
+```
+
+Linux下编译共享库时，必须加上-fPIC参数，否则在链接时会有错误提示.这是在编译zsh时候发现明明装了ncurse却还是不能用的共享库的坑。
+
+> fPIC的目的是什么？共享对象可能会被不同的进程加载到不同的位置上，如果共享对象中的指令使用了绝对地址、外部模块地址，那么在共享对象被加载时就必须根据相关模块的加载位置对这个地址做调整，也就是修改这些地址，让它在对应进程中能正确访问，而被修改到的段就不能实现多进程共享一份物理内存，它们在每个进程中都必须有一份物理内存的拷贝。fPIC指令就是为了让使用到同一个共享对象的多个进程能尽可能多的共享物理内存，它背后把那些涉及到绝对地址、外部模块地址访问的地方都抽离出来，保证代码段的内容可以多进程相同，实现共享。
+
 CFLAGS 表示用于 C 编译器的选项，
 
 CXXFLAGS 表示用于 C++ 编译器的选项。
@@ -131,19 +145,17 @@ LDFLAGS = -L/var/xxx/lib -L/opt/mysql/lib -Wl,R/var/xxx/lib -Wl,R/opt/mysql/lib
 
 - [CFLAGS详解](http://blog.csdn.net/xinyuan510214/article/details/50457433)
 
-## 几个必须要装的标准库
+## 几个必须要装的软件库
+
+**ncurses**提供了一系列的函数以便使用者调用它们去生成基于文本的用户界面，许多大名鼎鼎的软件都用到了ncurses，例如vim, screen,tmux,zsh等。并且**samtools**如果需要tview可视化BAM文件，也需要这个库做支持。
 
 ```shell
 wget ftp://ftp.invisible-island.net/ncurses/ncurses.tar.gz && tar -zxvf ncurses.tar.gz
-export CXXFLAGS=" -fPIC"
-export CFLAGS=" -fPIC"
 ./configure --enable-shared --prefix=$HOME/usr
 make && make install
 ```
 
-这里在编译前声明了两个环境变量，这是在安装zsh遇到共享库的问题得到的教训. Linux下编译共享库时，必须加上-fPIC参数，否则在链接时会有错误提示.
-
-> fPIC的目的是什么？共享对象可能会被不同的进程加载到不同的位置上，如果共享对象中的指令使用了绝对地址、外部模块地址，那么在共享对象被加载时就必须根据相关模块的加载位置对这个地址做调整，也就是修改这些地址，让它在对应进程中能正确访问，而被修改到的段就不能实现多进程共享一份物理内存，它们在每个进程中都必须有一份物理内存的拷贝。fPIC指令就是为了让使用到同一个共享对象的多个进程能尽可能多的共享物理内存，它背后把那些涉及到绝对地址、外部模块地址访问的地方都抽离出来，保证代码段的内容可以多进程相同，实现共享。
+**Libevent**是一个用C语言编写的、轻量级的开源高性能事件通知库, 后续安装tmux时候需要这个依赖库。
 
 ```shell
 # libevent
@@ -153,7 +165,61 @@ tar -zxvf libevent-2.1.8-stable.tar.gz && cd  libevent-2.1.8
 ./configure prefix=$HOME/usr && make && make install
 ```
 
-## 安装zsh
+**bzip2, xz, zlib**: 文件压缩相关函数库，后续samtools编译时需要。
+
+```shell
+wget http://www.zlib.net/zlib-1.2.11.tar.gz
+tar -zxvf zlib-1.2.11.tar.gz && cd zlib-1.2.11 && ./configure --prefix=$HOME/usr && make && make install
+wget http://www.bzip.org/1.0.6/bzip2-1.0.6.tar.gz
+tar -zxvf bzip2-1.0.6.tar.gz && cd bzip2-1.0.6 && ./configure --prefix=$HOME/usr && make && make install
+wget https://tukaani.org/xz/xz-5.2.3.tar.gz
+tar -zxvf xz-5.2.3.tar.gz && cd xz-5.2.3 && ./configure --prefix=$HOME/usr && make && make install
+```
+
+**openssl, libssh2, libcurl**: 计算机之间文件传输访问相关库。其中OpenSSL是一个安全套接字层密码库，囊括主要的密码算法、常用的密钥和证书封装管理功能及SSL协议，并提供丰富的应用程序供测试或其它目的使用。libssh2是一个C 函数库，用来实现SSH2协议。libcurl主要功能就是用不同的协议连接和沟通不同的服务器.
+
+```shell
+# 安装有先后
+# openssl
+wget https://www.openssl.org/source/openssl-1.0.2m.tar.gz
+tar -zxvf openssl-1.0.2m.tar.gz && cd openssl-1.0.2m
+# 这里非常神奇的居然是config，添加shared生成动态库
+./config prefix=$HOME/usr shared
+make && make install
+# 卸载使用 make clean
+# libssh2
+wget https://www.libssh2.org/download/libssh2-1.8.0.tar.gz
+tar -zxvf libssh2-1.8.0.tar.gz && cd libssh2-1.8.0
+./configure --with-libssl-prefix=$HOME/usr/ssl --prefix=$HOME/usr
+# libcurl
+wget https://curl.haxx.se/download/curl-7.56.1.tar.gz
+tar -zxvf curl-7.56.1.tar.gz && cd curl-7.56.1
+./configure --prefix=$HOME/usr --enable-http --enable-ftp --enable-file --enable-proxy --enable-telnet --enable-libcurl-option --enable-ipv6 --with-lib --with-ssl
+```
+
+**readline**: GNU提供用于这些命令补全、搜索历史命令、行编辑快捷键等等这些人性化的交互方式的函数库，缺少这个标准库，编译的R就缺少自动补全的功能。
+
+```shell
+wget http://ftp.gnu.org/gnu/readline/readline-7.0.tar.gz
+tar -zxvf readline-7.0.tar.gz && cd readline-7.0
+./configure --prefix=$HOME/usr && make && make install
+```
+
+**PCRE**: 提供和Perl5相同语法和语义正则表达式的函数库，后续安装R用到。 
+
+```shell
+wget ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-8.41.tar.gz
+tar -zxvf pcre-8.41.tar.gz && cd pcre-8.41
+./configure --enable-utf --enable-pcregrep-libz --enable-pcregrep-libbz2 --prefix=$HOME/usr
+```
+
+**x11**：
+
+## 编译案例
+
+### 安装zsh
+
+zsh或许可以认为是最好的shell，用过zsh的人都不会想着bash了。不过zsh自定义配置，可供选择的插件以及主题实在是太多，因此一定要搭配oh-my-zsh。zsh依赖ncurses.
 
 ```shell
 wget -O zsh.tar.gz https://sourceforge.net/projects/zsh/files/latest/download
@@ -163,44 +229,45 @@ export CPPFLAGS="-I$HOME/usr/include/" LDFLAGS="-L$HOME/usr/lib"
 make && make install
 ```
 
-## 安装Tmux
+由于没有root权限，无法使用`chsh`，只能通过在`~/.bashrc`添加`exec $HOME/usr/bin/zsh -l`保证登陆的时候自动切换成zsh。其次, zsh搭配oh-my-zsh才完整, 只不过这里只能手动安装了。
 
-配置环境变量，这些环境变量在configure配置时，成为GCC/CC后面的参数
+```shell
+# 从github上克隆oh-my-zsh
+git clone git://github.com/robbyrussell/oh-my-zsh.git ~/.oh-my-zsh
+# 用oh-my-zsh的zsh配置文件替代
+cp ~/.oh-my-zsh/templates/zshrc.zsh-template ~/.zhsrc
+# 安装一些字体, 不然一些主题会显示异常
+cd src
+git clone https://github.com/powerline/fonts.git --depth=1
+cd fonts && ./install.sh
+```
+
+重启一下终端，后面根据需要调整配置文件里的参数。
+
+### 编译tmux
+
+tmux和screen类似，也是文本终端神器, 依赖于libevent和ncurses.
 
 ```shell
 export CPPFLAGS="-I$HOME/usr/include -I$HOME/usr/include/ncurses"
 export LDFLAGS="-L$HOME/usr/lib -L$HOME/usr/lib64"
-```
-
-编译tmux
-
-```shell
 mkdir -p src && cd src
 git clone https://github.com/tmux/tmux.git
 cd tmux
 sh autogen.sh
 ./configure --prefix=$HOME/usr
+make && make install
 ```
 
-用ldd可以对程序的动态函数库进行解析
+### 编译R语言
+
+由于我自己编译完全版的GCC套餐，很多之前的gfortran不存在的问题也就不存在了（管理员安装了Java）。此外，R还需要gnu readline, pcre > 8.2, x11。当然这些函数包都在之前安装好了。
 
 ```shell
-[wangjw@mgt bin]$ ldd tmux
-	linux-vdso.so.1 =>  (0x00007ffd680e8000)
-	libutil.so.1 => /lib64/libutil.so.1 (0x00007f3832d7d000)
-	libevent-2.1.so.6 => /home6/wangjw/usr/lib/libevent-2.1.so.6 (0x00007f3832b28000)
-	libresolv.so.2 => /lib64/libresolv.so.2 (0x00007f383290e000)
-	libc.so.6 => /lib64/libc.so.6 (0x00007f383254b000)
-	libpthread.so.0 => /lib64/libpthread.so.0 (0x00007f383232e000)
-	/lib64/ld-linux-x86-64.so.2 (0x00005648487fd000)
+wget https://cran.r-project.org/src/base/R-3/R-3.4.2.tar.gz
+tar -zxvf R-3.4.2.tar.gz  && cd R-3.4.2/
+./configure --prefix=$HOME/R
+make && make install
 ```
 
-事实证明"LD\_LIBRARY\_PATH"并没有多大用处。
-
-```shell
-$ wget https://cran.r-project.org/src/base/R-3/R-3.4.2.tar.gz
-$ tar -zxvf R-3.4.2.tar.gz  && cd R-3.4.2/
-$ ls
-COPYING    INSTALL      Makefile.fw  README        VERSION       config.site  configure.ac  etc  po     src    tools
-ChangeLog  Makeconf.in  Makefile.in  SVN-REVISION  VERSION-NICK  configure    doc           m4   share  tests
-```
+到此，我可以说Linux平台下即便我没有root权限，也没有多少软件包是我所不能手工编译。
