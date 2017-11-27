@@ -99,53 +99,92 @@ gcc version 4.8.5 20150623 (Red Hat 4.8.5-16) (GCC)
 
 ## Linux的编译体系
 
-编译的常规三部曲是`./configure --prefix=$HOME/usr && make && make install`，其中最重要的一步就是`configure`，它所做的任务如下
+无管理员权限编译的常规三部曲是`./configure --prefix=$HOME/usr && make && make install`，其中最重要的一步就是`configure`，它所做的任务如下
 
 - 检查GCC版本以及是否安装了编译所需工具
 - 如果需要头文件，则默认去`/usr/include`查找
 - 如果涉及到动态编译库，则默认去`/usr/lib`和`/usr/lib64`查找. 注：`lib`的函数库仅用于开机时用,提供给/bin和/sbin.
 
-那为何需要配置？配置主要解决软件开发和软件实际安装时平台不同所导致的问题，由于平台不同，开发写的C代码需要。
+那为何需要配置？配置主要解决软件开发和软件实际安装时平台不同所导致的问题。
 
-## 重要的环境变量
+首先，一个C/C++工程不可能只用到标准库，很多已有的轮子就不需要重复制造。其次，由于很多软件都重复用到相同的依赖库，那么如果把这些依赖库独立成单独的模块，在调用的时候加载，也能节省空间。早期为了适配多个平台，开发人员需要手写条件语句来检查环境依赖，后来GNU专门开发了Autotools辅助构建源码编译所需要的关键文件。
 
-在安装之前需要先声明几个环境变量，可以直接添加在配置文件中。这都是后面遇到共享库的问题得到的经验教训。
+![](http://oex750gzt.bkt.clouddn.com/17-11-27/51990083.jpg)
+
+## 编译环境变量
+
+用`./configure -h`查看帮助文档的时候，会提示几个和编译相关非常重要的环境变量。
 
 ```shell
-export LD_LIBRARY_PATH=$HOME/usr/lib:$HOME/usr/lib64
-export CXXFLAGS=" -fPIC"
-export CFLAGS=" -fPIC"
+# 编译器
+CC          指定C编译器(compiler command)路径
+CXX         指定C++编译器
+# 编译器选项
+CFLAGS      用于C编译器的选项
+CXXFLAGS    用于C++编译器的选项
+LDFLAGS     链接相关选项,如果你有自定义的函数库(lib dir)，即可以用 -L<lib dir>指定
+# 预编译器
+CXXCPP      C++ 预处理器(preprocessor)
+CPP         C 预处理器(preprocessor)
+# 预编译器选项
+CPPFLAGS    C/C++预处理器选项, 如果你自定义的头文件，可以用-I<include dir>
 ```
 
-Linux下编译共享库时，必须加上-fPIC参数，否则在链接时会有错误提示.这是在编译zsh时候发现明明装了ncurse却还是不能用的共享库的坑。
+Makfile规则中的编译命令通常遵守如下规范：
 
-> fPIC的目的是什么？共享对象可能会被不同的进程加载到不同的位置上，如果共享对象中的指令使用了绝对地址、外部模块地址，那么在共享对象被加载时就必须根据相关模块的加载位置对这个地址做调整，也就是修改这些地址，让它在对应进程中能正确访问，而被修改到的段就不能实现多进程共享一份物理内存，它们在每个进程中都必须有一份物理内存的拷贝。fPIC指令就是为了让使用到同一个共享对象的多个进程能尽可能多的共享物理内存，它背后把那些涉及到绝对地址、外部模块地址访问的地方都抽离出来，保证代码段的内容可以多进程相同，实现共享。
+1,首先从源代码生成目标文件(**预处理,编译,汇编**)，"-c"选项表示不执行链接步骤；
 
-CFLAGS 表示用于 C 编译器的选项，
+```shell
+$(CC) $(CPPFLAGS) $(CFLAGS) example.c   -c   -o example.o
+```
 
-CXXFLAGS 表示用于 C++ 编译器的选项。
+2,然后将目标文件链接为最终的结果(**链接**)，"-o"选项用于指定输出文件的名字。
 
-这两个变量实际上涵盖了编译和汇编两个步骤。
+```shell
+$(CC) $(LDFLAGS) example.o   -o example
+```
 
-CFLAGS： 指定头文件（.h文件）的路径，如：CFLAGS=-I/usr/include -I/path/include。同样地，安装一个包时会在安装路径下建立一个include目录，当安装过程中出现问题时，试着把以前安装的包的include目录加入到该变量中来。
+这些只是约定俗成的惯例，所以有些人会“随性而为”，你也拿他没有办法。尽管将源代码编译为二进制文件的四个步骤由不同的程序(cpp,gcc/g++,as,ld)完成，但是事实上 cpp, as, ld 都是由 gcc/g++ 进行间接调用的。换句话说，**控制了 gcc/g++ 就等于控制了所有四个步骤**。从 Makefile 规则中的编译命令可以看出，编译工具的行为全靠 **CC/CXX CPPFLAGS CFLAGS/CXXFLAGS LDFLAGS** 这几个变量在控制。所以控制这些变量最简单的做法是首先设置与这些 Makefile 变量同名的环境变量并将它们 export 为**环境变量**（全局），然后运行 configure 脚本，大多数 configure 脚本会使用这同名的环境变量代替 Makefile 中的值
 
-LDFLAGS：gcc 等编译器会用到的一些优化参数，也可以在里面指定库文件的位置。用法：LDFLAGS=-L/usr/lib -L/path/to/your/lib。每安装一个包都几乎一定的会在安装目录里建立一个lib目录。如果明明安装了某个包，而安装另一个包时，它愣是说找不到，可以抒那个包的lib路径加入的LDFALGS中试一下。
+- CC/CXX: 指定C/C++编译所在路径，即可以选择不同的版本的编译器进行编译。
+- CPPFLAGS: 这是用于预处理阶段的选项。用于添加不在标准路径`/usr/include`下的头文件。如`CPPFLAGS="-I$HOME/usr/include -I$HOME/usr/include/ncurses"`
+- CFLAGS/CXXFLAGS： 指定头文件（.h文件）的路径，如：`CFLAGS=-I/usr/include -I/path/include`。同样地，安装一个包时会在安装路径下建立一个include目录，当安装过程中出现问题时，试着把以前安装的包的include目录加入到该变量中来。
 
-LIBS：告诉链接器要链接哪些库文件，如LIBS = -lpthread -liconv
+> CPPFLAG和CFLAGS/CXXFLAGS这两个变量可以认为是等价关系，都用在预处理阶段，也就是都能用于指定头文件所在位置。
 
-简单地说，LDFLAGS是告诉链接器从哪里寻找库文件，而LIBS是告诉链接器要链接哪些库文件。不过使用时链接阶段这两个参数都会加上，所以你即使将这两个的值互换，也没有问题。
+- LDFLAGS：gcc 等编译器会用到的一些优化参数，也可以在里面指定库文件的位置。用法：`LDFLAGS=-L/usr/lib -L/path/to/your/lib`。每安装一个包都几乎一定的会在安装目录里建立一个lib目录。如果明明安装了某个包，而安装另一个包时，它愣是说找不到，可以抒那个包的lib路径加入的LDFALGS中试一下。
 
 有时候LDFLAGS指定-L虽然能让链接器找到库进行链接，但是运行时链接器却找不到这个库，如果要让软件运行时库文件的路径也得到扩展，那么我们需要增加这两个库给"-Wl,R"：
 
+```shell
 LDFLAGS = -L/var/xxx/lib -L/opt/mysql/lib -Wl,R/var/xxx/lib -Wl,R/opt/mysql/lib
+```
 
-如果在执行./configure以前设置环境变量export LDFLAGS="-L/var/xxx/lib -L/opt/mysql/lib -Wl,R/var/xxx/lib -Wl,R/opt/mysql/lib" ，注意设置环境变量等号两边不可以有空格，而且要加上引号（shell的用法）。那么执行configure以后，Makefile将会设置这个选项，链接时会有这个参数，编译出来的可执行程序的库文件搜索路径就得到扩展了
+如在执行./configure以前设置环境变量 `export LDFLAGS="-L/var/xxx/lib -L/opt/mysql/lib -Wl,R/var/xxx/lib -Wl,R/opt/mysql/lib"`，注意设置环境变量等号两边不可以有空格，而且要加上引号（shell的用法）。那么执行configure以后，Makefile将会设置这个选项，链接时会有这个参数，编译出来的可执行程序的库文件搜索路径就得到扩展了
+
+除了通过以上几种环境变量为编译器提供头文件和静态和动态库文件的位置信息外，还有一种变量叫做**PKG\_CONFIG\_PATH**, 它从`xx.pc`文件获取读取相应的环境环境。
+
+**注意**:Linux下编译共享库时，必须加上-fPIC参数，即`export CFLAGS=" -fPIC" CXXFLAGS=" -fPIC"`否则在链接时会有错误提示.这是在编译zsh时候发现明明装了ncurse却还是不能用的共享库的坑。
+
+> fPIC的目的是什么？共享对象可能会被不同的进程加载到不同的位置上，如果共享对象中的指令使用了绝对地址、外部模块地址，那么在共享对象被加载时就必须根据相关模块的加载位置对这个地址做调整，也就是修改这些地址，让它在对应进程中能正确访问，而被修改到的段就不能实现多进程共享一份物理内存，它们在每个进程中都必须有一份物理内存的拷贝。fPIC指令就是为了让使用到同一个共享对象的多个进程能尽可能多的共享物理内存，它背后把那些涉及到绝对地址、外部模块地址访问的地方都抽离出来，保证代码段的内容可以多进程相同，实现共享。
 
 参考资料:
 
 - [CFLAGS详解](http://blog.csdn.net/xinyuan510214/article/details/50457433)
+- [Makefile编译选项CC与CXX/CPPFLAGS、CFLAGS与CXXFLAGS/LDFLAGS](http://blog.csdn.net/hjwang1/article/details/44497489)
 
-## 几个必须要装的软件库
+## 几个必须要装的函数库
+
+在安装之前需要先声明几个环境变量，可以直接添加在配置文件中。这都是后面遇到共享库的问题得到的经验教训。
+
+```shell
+export CFLAGS=" -fPIC"
+export CXXFLAGS=" -fPIC"
+export CPPFLAGS="-I$HOME/usr/include -I$HOME/usr/include/ncurses -I$HOME/usr/include/X11"
+export LDFLAGS="-L$HOME/usr/lib -L$HOME/usr/lib64"
+export LD_LIBRARY_PATH=$HOME/usr/lib:$HOME/usr/lib64
+export PKG_CONFIG_PATH=$HOME/usr/lib/pkgconfig:$HOME/usr/share/pkgconfig
+```
 
 **ncurses**提供了一系列的函数以便使用者调用它们去生成基于文本的用户界面，许多大名鼎鼎的软件都用到了ncurses，例如vim, screen,tmux,zsh等。并且**samtools**如果需要tview可视化BAM文件，也需要这个库做支持。
 
@@ -213,7 +252,32 @@ tar -zxvf pcre-8.41.tar.gz && cd pcre-8.41
 ./configure --enable-utf --enable-pcregrep-libz --enable-pcregrep-libbz2 --prefix=$HOME/usr
 ```
 
-**x11**：
+**x11**：X11也叫做X Window系统，X Window系统 (X11或X)是一种位图显示的视窗系统,是在 Unix 和 类Unix 操作系统，以及OpenVMS上建立图形用户界面的标准工具包和协议，并可用于几乎所有已有的现代操作系统。主要是R编译的时候要用，具体用途有待开发。
+
+x11安装比较复杂，有很多的依赖库，因此需要先安装xtrans, xextproto, xcb(lib,xcb-proto, libpthread-subs), kbproto,xproto,inputproto。但是编译很容易，仅提供下载链接
+
+```shell
+https://www.x.org/releases/X11R7.7/src/lib/xtrans-1.2.7.tar.gz
+https://www.x.org/releases/X11R7.7/src/proto/xextproto-7.2.1.tar.gz
+https://www.x.org/releases/X11R7.7/src/proto/kbproto-1.0.6.tar.gz
+https://www.x.org/releases/X11R7.7/src/proto/xproto-7.0.23.tar.gz
+https://www.x.org/releases/X11R7.7/src/proto/inputproto-2.2.tar.gz
+https://www.x.org/releases/X11R7.7/src/xcb/libpthread-stubs-0.3.tar.gz
+https://www.x.org/releases/X11R7.7/src/xcb/xcb-proto-1.7.1.tar.gz
+https://www.x.org/releases/X11R7.7/src/xcb/libxcb-1.8.1.tar.gz
+https://www.x.org/releases/X11R7.7/src/lib/libSM-1.2.1.tar.gz
+https://www.x.org/releases/X11R7.7/src/lib/libICE-1.0.8.tar.gz
+https://www.x.org/releases/X11R7.7/src/lib/libXt-1.1.3.tar.gz
+```
+
+相当于人工检查依赖环境，仅仅是繁琐而已，并不困难
+
+```shell
+# 安装X11
+wget -4 https://www.x.org/releases/X11R7.7/src/lib/libX11-1.5.0.tar.gz
+tar -zxvf libX11-1.5.0.tar.gz && cd libX11-1.5.0
+./configure --prefix=$HOME/usr && make && make install
+```
 
 ## 编译案例
 
@@ -269,5 +333,7 @@ tar -zxvf R-3.4.2.tar.gz  && cd R-3.4.2/
 ./configure --prefix=$HOME/R
 make && make install
 ```
+
+![R configure](http://oex750gzt.bkt.clouddn.com/17-11-27/91584858.jpg)
 
 到此，我可以说Linux平台下即便我没有root权限，也没有多少软件包是我所不能手工编译。
