@@ -244,7 +244,7 @@ tar -zxvf readline-7.0.tar.gz && cd readline-7.0
 ./configure --prefix=$HOME/usr && make && make install
 ```
 
-**PCRE**: 提供和Perl5相同语法和语义正则表达式的函数库，后续安装R用到。 
+**PCRE**: 提供和Perl5相同语法和语义正则表达式的函数库，后续安装R用到。
 
 ```shell
 wget ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-8.41.tar.gz
@@ -326,6 +326,15 @@ make && make install
 ### 编译R语言
 
 由于我自己编译完全版的GCC套餐，很多之前的gfortran不存在的问题也就不存在了（管理员安装了Java）。此外，R还需要gnu readline, pcre > 8.2, x11。当然这些函数包都在之前安装好了。
+
+一些依赖库
+
+```shell
+# 安装tidyverse发现xm12需要libiconv的libiconv.so.2
+https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.15.tar.gz
+```
+
+正式安装
 
 ```shell
 wget https://cran.r-project.org/src/base/R-3/R-3.4.2.tar.gz
