@@ -7,4 +7,8 @@
 # mac
 .DS_Store
 tex*
+<<<<<<< HEAD
 *pdf
+=======
+*bib
+>>>>>>> 986a83c90fedb3b8abd99d782db35aba8e4d7bb5

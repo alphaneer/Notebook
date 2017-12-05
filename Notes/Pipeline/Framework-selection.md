@@ -4,6 +4,7 @@ author: Zhougeng Xu
 date: December 5, 2017
 tags: 框架, framework
 notebook: 工具笔记
+<<<<<<< HEAD
 output: 
   pdf_document:
     toc: true
@@ -11,6 +12,8 @@ output:
     highlight: tango
 CJKmainfont: PingFang SC
 mainfont: Monaco
+=======
+>>>>>>> 986a83c90fedb3b8abd99d782db35aba8e4d7bb5
 ---
 
 <!-- @import "[TOC]" {cmd="toc" depthFrom=1 depthTo=6 orderedList=false} -->
