@@ -9,8 +9,8 @@ output:
     toc: true
     toc_depth: 2
     highlight: tango
-    latex_engine: xelatex
-    CJKmainfont: Hei
+CJKmainfont: PingFang SC
+mainfont: Monaco
 ---
 
 <!-- @import "[TOC]" {cmd="toc" depthFrom=1 depthTo=6 orderedList=false} -->

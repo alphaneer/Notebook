@@ -8,9 +8,11 @@ notebook: Python笔记
 
 # Python for Data Analysis 学习笔记
 
-## Python内置数据结构
+## Python基础
 
-### 列表和相应的列表函数
+### Python数据类型和数据结构
+
+#### 列表
 
 Python有一些内置的列表操作函数非常好用，如：
 
@@ -36,9 +38,26 @@ s1, s2 = zip(*seq)
 
 - reversed: 序列取反 `reversed(list(range(10)))`, 返回可迭代对象
 
-### 字典
+#### 字典
 
 字典几乎可以说Python中最重要的一类数据结构，
+
+#### 集合
+
+### 函数
+
+科里化（currying）: 一种计算机科学术语，指的是通过已有函数，通过修改参数构造新的函数。
+
+```Python
+from functool import partial
+
+def add_number(x,y):
+    return x+y
+
+add_five = partial(add_number,5)
+# 或
+add_five = lambda y: add_number(5, y)
+```
 
 ## 数据读写
 
@@ -49,7 +68,9 @@ s1, s2 = zip(*seq)
 - 遍历：是否对大文件遍历读取
 - 数据注释： 跳过一些不需要的注视
 
-我们这里读取拟南芥的GFF文件
+## 数据筛选
+
+
 
 ## 字符操作
 
