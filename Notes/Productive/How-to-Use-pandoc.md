@@ -195,14 +195,14 @@ Cool figure!
 bib的内容为：
 
 ```BibLaTeX
-@online{center_for_history_and_new_media_zotero_????,
+@online{center_for_history_and_new_media_zotero,
 	title = {Zotero 快速入门指南},
 	url = {http://zotero.org/support/quick_start_guide},
 	author = {{Center for History and New Media}}
 }
 ```
 
-第二步：在Markdown中进行引用。引用的格式`[@ID]`, 其中ID是`{`紧接的内容，这里为`center_for_history_and_new_media_zotero_????`.效果为"见实例文献[@center_for_history_and_new_media_zotero_????].
+第二步：在Markdown中进行引用。引用的格式`[@ID]`, 其中ID是`{`紧接的内容，这里为`center_for_history_and_new_media_zotero`.效果为"见实例文献[@center_for_history_and_new_media_zotero].
 
 第三步: pandoc渲染.主要的参数为`--filter pandoc-citeproc`进行格式转换，`--bibliography=reference.bib`指定参考文献文件，`--csl=chinese-gb7714-2005-numeric.csl`指定参考文献格式。
 
@@ -217,3 +217,5 @@ pandoc --number-sections --toc --toc-depath 3 \
     -V mainfont='Monaco' \
     How-to-Use-pandoc.md -o output.pdf
 ```
+
+## 参考文献
