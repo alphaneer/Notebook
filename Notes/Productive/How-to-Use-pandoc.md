@@ -13,11 +13,13 @@ fignos-plus-name: 图
 工作环境:
 
 - Windows10/MacOS
-- [python2.7](http://www.python.org/)
+- [python](http://www.python.org/)
 - [pandoc](http://www.pandoc.org/)
 - [Haskell Platform](https://www.haskell.org/platform/)
 
-## pandoc的安装
+## pandoc的安装{#sec:install}
+
+最快的方法就是装一个Anaconda3, 这样子pandoc和Python都有了。至于Haskell源码编译就留待以后折腾。
 
 ## 基本markdown语法
 
@@ -75,7 +77,7 @@ x_{21} & x_{22} & x_{23}
 
 至于如何写数学公式，请自行百度Latex数学公式
 
-## 高级语法 {#high-level}
+## 高级语法 {#sec:highLevel}
 
 对于一般的写作而言，学完pandoc的markdown语法基本就够了，如下部分就可以直接过掉不用看了，毕竟你写科技论文的首选肯定是微软的word。但其实用markdown写科技文也不是不行，你只需要往前继续再走几步而已。Markdown的诞生就是为了尽可能简化排版，因此和排版神器LaTex相比肯定是不够看的，然而LaTex不但强大而且难学，一般只有专业人士才会使用。不过pandoc目前也有许多现成的插件用来实满足科技文写作的基本需求，例如
 
@@ -86,9 +88,21 @@ x_{21} & x_{22} & x_{23}
 
 因此，最佳方案就是利用markdown先完成初稿，使用pandoc进行格式转换，进行后期调整。
 
-### 章节引用
+### 章节编号{#sec:numer}
 
-论文中可能会用如见[高级语法](#high-level)一节这种方式来方便跳转
+对章节编号并引用章节号的需求一般出现在写毕业论文或者写书的时候，一般性论文说一句“如高级语法部分所说”差不多别人就知道了。不过满足这个需求也不难，只需要安装好插件，修改pandoc的参数，markdown文本中使用专门的标识符。插件安装已经在[pandoc]{#install}完成。
+
+先在markdown中使用专门的标识。如果没有特殊声明，pandoc会自动为每个章节或标题赋予一个标识，具体规则不需要了解，因为我们一定要显式声明，格式为`章节{#sec:标识}`。然后以`[XXX](#标识)`形进行引用。注意标识符只能用全字符，不能有任何的特殊字符包括中文。
+
+之后在命令行执行如下内容，就可以自动在输出文件中进行章节编号^[1]。
+
+```shell
+pandoc -number-sections -toc --toc-depath 3 -filter pandoc-crossref How-to-Use-pandoc.md -o output.pdf
+```
+
+上面所达到的结果就是，见[章节编号](#sec:numberSection).
+
+[^1]: 如果不需要对某个章节编号，则为`#section{ - }`形式
 
 在markdown中进行文献管理可以简单分为三步：
 
