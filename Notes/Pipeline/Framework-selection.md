@@ -4,13 +4,6 @@ author: Zhougeng Xu
 date: December 5, 2017
 tags: 框架, framework
 notebook: 工具笔记
-output: 
-  pdf_document:
-    toc: true
-    toc_depth: 2
-    highlight: tango
-    latex_engine: xelatex
-    CJKmainfont: Hei
 ---
 
 <!-- @import "[TOC]" {cmd="toc" depthFrom=1 depthTo=6 orderedList=false} -->
