@@ -88,7 +88,7 @@ x_{21} & x_{22} & x_{23}
 
 因此，最佳方案就是利用markdown先完成初稿，使用pandoc进行格式转换，进行后期调整。
 
-### 章节编号{#sec:numer}
+### 章节编号{#sec:numberSection}
 
 对章节编号并引用章节号的需求一般出现在写毕业论文或者写书的时候，一般性论文说一句“如高级语法部分所说”差不多别人就知道了。不过满足这个需求也不难，只需要安装好插件，修改pandoc的参数，markdown文本中使用专门的标识符。插件安装已经在[pandoc]{#install}完成。
 
@@ -96,13 +96,13 @@ x_{21} & x_{22} & x_{23}
 
 之后在命令行执行如下内容，就可以自动在输出文件中进行章节编号[^1]。
 
+[^1]: 如果不需要对某个章节编号，则为`#section{ - }`形式
+
 ```shell
 pandoc -number-sections -toc --toc-depath 3 -filter pandoc-crossref How-to-Use-pandoc.md -o output.pdf
 ```
 
 上面所达到的结果就是，见[@sec:numberSection].
-
-[^1]: 如果不需要对某个章节编号，则为`#section{ - }`形式
 
 在markdown中进行文献管理可以简单分为三步：
 
