@@ -6,3 +6,4 @@
 *.git
 # mac
 .DS_Store
+tex*
