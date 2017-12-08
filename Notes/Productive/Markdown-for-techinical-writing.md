@@ -1,11 +1,15 @@
-# 使用markdown进行科技论文写作
+---
+title: 使用markdown进行科技论文写作
+author: Xu Zhougeng
+date: 2017-12-6
+---
 
 阅读这篇文章需要有一定的markdown基本知识，如果没有请查阅这篇文章[Pandoc’s Markdown 語法中文翻譯](http://pages.tzengyuxio.me/pandoci/)。操作基于MacOS, 但是仅用到开源软件，且全平台通用。用到的工具为：Zotero, pandoc。还有两个额外插件
 
 - 插件1： pandoc-crossref(haskell-platfrom)
 - 插件2：zotero-better-bibtex(zotero)
 
-## 高级语法 {#sec:highLevel}
+# 高级语法 {#sec:highLevel}
 
 对于一般的写作而言，学完pandoc的markdown语法基本就够了，毕竟很多人写科技论文的首选肯定是微软的word。但其实用markdown写科技文也不是不行，你只需要往前继续再走几步，学点额外的高级语法。
 
@@ -20,7 +24,7 @@ Markdown的诞生就是为了尽可能简化排版，因此和排版神器LaTex�
 
 [^1]: 目前还没有遇到如此专业的人士。
 
-## 章节编号 {#sec:numberSection}
+# 章节编号 {#sec:numberSection}
 
 对章节编号并引用章节号的需求一般出现在写毕业论文或者写书的时候，一般性论文说一句“如高级语法部分所说”差不多别人就知道了。不过满足这个需求也不难，只需要安装好插件，修改pandoc的参数，markdown文本中使用专门的标识符。
 
@@ -30,7 +34,7 @@ Markdown的诞生就是为了尽可能简化排版，因此和排版神器LaTex�
 
 [^2]: 如果不需要对某个章节编号，则为`#section{ - }`形式
 
-```shell
+```bash
 pandoc --number-sections --toc --toc-depath 3 \
     --filter pandoc-crossref \
     --latex-engine=xelatex \
@@ -43,7 +47,7 @@ pandoc --number-sections --toc --toc-depath 3 \
 
 和章节编号引用类似，数学公式,表格和代码的索引的语法如下
 
-````shell
+````bash
 # 数学公式
 $$ x +y = z $$ {#eq:label}
 # 表格
@@ -62,7 +66,7 @@ main = putStrLn "Hello World!"
 
 引用的语法基本都长这样`[@xx:xxx]`，具体一点就是：
 
-```shell
+```bash
 # 方法1
 [@eq:label1;@eq:label2;...]
 [@tbl:label1;@tbl:label2;...]
@@ -73,7 +77,7 @@ main = putStrLn "Hello World!"
 @lst:code
 ```
 
-## 图片编号和索引
+# 图片编号和索引
 
 关于图片要专门拿出来说下，分为一图无子图，一图多子图，多图为一图这三种情况。
 
@@ -83,7 +87,7 @@ main = putStrLn "Hello World!"
 
 多子图为一图就比较麻烦，因为需要在markdown里面进行拼接，会比较麻烦，要用到HTML语法：
 
-```shell
+```html
 <div id="fig:coolFig">
 ![caption a](coolfiga.png){#fig:cfa width=30%}
 ![caption b](coolfigb.png){#fig:cfb width=60%}
@@ -99,7 +103,7 @@ Cool figure!
 
 引用方法为`[@fig:cfa]`。
 
-## 文献引用
+# 文献引用
 
 和文献引用相比起来，之前的引用可能都太过简单了，我看了半天[官方文档](http://pandoc.org/MANUAL.html#citations) 都没有理解他想表达什么，因为没有提供案例。最后在[如何用Markdown写论文？](http://www.jianshu.com/p/b0ac7ae98100)找到了相关案例，并且可以终于说是学会了pandoc。
 
@@ -111,7 +115,7 @@ Cool figure!
 
 bib的内容为：
 
-```BibLaTeX
+```latex
 @online{center_for_history_and_new_media_zotero,
 	title = {Zotero 快速入门指南},
 	url = {http://zotero.org/support/quick_start_guide},
@@ -123,7 +127,7 @@ bib的内容为：
 
 第三步: pandoc渲染.主要的参数为`--filter pandoc-citeproc`进行格式转换，`--bibliography=reference.bib`指定参考文献文件，`--csl=chinese-gb7714-2005-numeric.csl`指定参考文献格式。
 
-```shell
+```bash
 pandoc --number-sections --toc --toc-depath 3 \
     --filter pandoc-crossref \
     --filter pandoc-citeproc \
@@ -143,4 +147,15 @@ pandoc --number-sections --toc --toc-depath 3 \
 
 ![](http://oex750gzt.bkt.clouddn.com/17-12-6/28617605.jpg)
 
-这样子你只要打开Zotero然后复制所需要的文献的索引标识即可。但是还不够方便，还是需要用到鼠标，最好的方式是直接在编辑器里进行索引。目前Atom和Sublime已经有这类插件，但是VS code还没有，要是等不到别人开发我就得自己动手了（已加入有生之年系列）。
+这个Citekey和原生不同，原生格式不可修改，但是这个Citekey可以在插件选项种自定义。
+
+然后修改首选项导出的默认格式为Better BibTex Citation Key Quick Copy。该设置可以保证使用快捷复制(ctrl+shift+c/cmd+shift+c)时粘贴的数据是Citekey.
+
+![](http://oex750gzt.bkt.clouddn.com/17-12-6/930016.jpg)
+
+zotero-better-bibtex插件本身的选项也可以修改，这里设置为pandoc所需要的格式。
+![](http://oex750gzt.bkt.clouddn.com/17-12-6/57754281.jpg)
+
+之后在导出条目时选择'Bettet xxx'，保存为bib格式，就能和之前一样用pandoc读取。
+
+当然还不够方便，还是需要用到鼠标，最好的方式是直接编写的时候使用一个快捷键呼出查询工具，进行选择复制格式。Atom和Sublime有对应的插件，vscode还没有。Mac平台上的Alfred3 的ZotQuery workflow能进行搜索，但是我没有搞定，可能需要额外开发了。
