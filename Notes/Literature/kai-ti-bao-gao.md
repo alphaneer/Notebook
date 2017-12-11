@@ -6,7 +6,7 @@ author: Xu Zhougeng
 
 ## 研究背景
 
-植物生长发育研究大多使用人为产生的突变群体或者含目标变异的自然群体而非种间杂交后代。在数十万年的演化过程中，自然界产生大量种间杂交变异群体，是研究植物发育和基因组进化的宝贵资源[@NasrallahArabidopsisSpeciesHybridsEmerging2000]。对异源四倍体 _Arabidopsis suecica_物种形成的研究发现，拟南芥属(_Arabidopsis_)的物种能较容易地与其他近缘物种其他物种杂交形成后代，例如 _A suecica_ 是由 _A. thaliana_ 和 _Cardaminopsis arenosa_ 通过种间杂交形成[@OKaneSynopsisArabidopsisBrassicaceae1997]，并能在实验室环境中人为创造相应组合，如四倍体拟南芥(_A. thaliana_)[@ChenGenedosagestochastic1998]。随着测序技术的不断发展，研究人员能较为方便地使用基因组学，生物生信学等方法，以拟南芥属物种作为材料研究植物的生长发育、遗传定位和基因组演化。
+植物生长发育研究大多使用人为产生的突变群体或者含目标变异的自然群体而非种间杂交后代。在数十万年的演化过程中，自然界产生大量种间杂交变异群体，是研究植物发育和基因组进化的宝贵资源[@NasrallahArabidopsisSpeciesHybridsEmerging2000]。对异源四倍体 _Arabidopsis suecica_物种形成的研究发现，拟南芥属(_Arabidopsis_)的物种能较容易地与其他近缘物种其他物种杂交形成后代，例如 _A suecica_ 是由 _A. thaliana_ 和 _Cardaminopsis arenosa_ 通过种间杂交形成[@OKaneSynopsisArabidopsisBrassicaceae1997]，并能在实验室环境中人为创造新的物种，如四倍体拟南芥(_A. thaliana_)是在秋水仙素处理后加倍形成[@ChenGenedosagestochastic1998]。随着测序技术的不断发展，研究人员能较为方便地使用基因组学，生物生信学等方法，以拟南芥属物种作为材料研究植物的生长发育、遗传定位和基因组演化。
 
 鼠耳芥(_A. halleri_)和琴叶南芥(_A. lyrata_)同属于十字花科，大约在500万年前从模式植物拟南芥(_A. thaliana_)中分离，走上不同的进化道路，因此都与拟南芥具有较高的亲缘性[@Al-ShehbazTaxonomyPhylogenyArabidopsis2002]。鼠耳芥为多年生植物，二倍体(2n=16) [@Al-ShehbazTaxonomyPhylogenyArabidopsis2002]，基因组大小约为256Mbp[@JohnstonEvolutiongenomesize2005]。 它以昆虫作为媒介进行授粉，自交不亲和，属于严格异交[@LlaurensHighpaternaldiversity2008]。鼠耳芥主要分布在中欧和东亚，栖息地包括山坡，草地，森林边缘和石缝[@Al-ShehbazTaxonomyPhylogenyArabidopsis2002]。琴叶南芥为二倍体植物，拥有8条染色体，基因组大小约为206.7 Mb，与拟南芥的序列相似度高达80%[@HuArabidopsislyratagenome2011], 因此能与拟南芥进行杂交，并且杂合后代能继续回交得到子代[@KuittinenComparingLinkageMaps2004]。与拟南芥不同，琴叶南芥为多年生植物，且自交不亲和[@NasrallahArabidopsisSpeciesHybridsEmerging2000]。这些特性使得琴叶南芥成为研究植物物种形成，发育，生态学和进化相关问题较好的材料。
 
@@ -16,7 +16,7 @@ author: Xu Zhougeng
 
 ## 研究意义
 
-不定根具有较高的经济效益，它能够用于林木繁殖，园艺栽培，如苹果树和葡萄树的繁殖，并且大部分谷物作物都依赖于冠根和支持根。不定根还能固定土壤，避免水土流失维持当地环境稳定，具有生态效益。对植物本身而言，它能让植物在生物和非生物胁迫下得以生存。除了经济和生态效益外，人类生存也依赖于不定根，谷物作物（小麦，水稻和玉米）提供了人类60%以上的卡路里[@SteffensPhysiologyAdventitiousRoots2016]。因此对不定根的研究能够提高植物对胁迫的耐性，对保证粮食安全有着重要的意义。
+植物在地上部分产生不定根是自然界非常广泛的现象，且在人类生产生活中扮演着重要的角色。不定根具有较高的经济效益，它能够用于林木繁殖，园艺栽培，如草莓和多肉植物的不定根营养繁殖，并且大部分谷物作物都依赖于冠根和支持根，如玉米，水稻。不定根还能固定土壤，避免水土流失维持当地环境稳定，具有生态效益。对植物本身而言，它能让植物在生物和非生物胁迫下得以生存。除了经济和生态效益外，人类生存也依赖于不定根，谷物作物（小麦，水稻和玉米）提供了人类60%以上的卡路里[@SteffensPhysiologyAdventitiousRoots2016]。但是不定根是如何进化来的呢？我们的研究会为不定根的进化问题提供一定的线索，同时为通过种间杂交研究植物性状与进化提供基础。
 
 # 研究目标和内容
 
@@ -52,7 +52,11 @@ BCF~1~的两个极端表型的SNP index差异较小（理论为0.75和1），因
 
 # 已有的工作基础
 
-实验室前期已经通过购买或实地采集，收集到鼠耳芥和琴叶南芥一些材料。目前也已得到鼠耳芥与琴叶南芥杂交得到F~1~后代，并且和亲本继续回交的BCF~1~群体。通过混池样本分析，大致将气生根相关基因定位在琴叶南芥的第三号染色体上。
+实验室前期已经通过购买收集到鼠耳芥和琴叶南芥一些材料。目前也已得到鼠耳芥与琴叶南芥杂交得到F~1~后代，并且和亲本继续回交的BCF~1~群体。
+
+![](http://oex750gzt.bkt.clouddn.com/17-12-10/21104649.jpg)
+
+通过混池样本分析，大致将气生根相关基因定位在琴叶南芥的第三号染色体上。
 
 # 研究计划及预期进展
 

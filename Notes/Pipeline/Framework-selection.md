@@ -1,10 +1,9 @@
 ---
-title: 框架工具选择
+title: 框架工具选择b
 author: Zhougeng Xu
 date: December 5, 2017
 tags: 框架, framework
 notebook: 工具笔记
-<<<<<<< HEAD
 output: 
   pdf_document:
     toc: true
@@ -12,8 +11,6 @@ output:
     highlight: tango
 CJKmainfont: PingFang SC
 mainfont: Monaco
-=======
->>>>>>> 986a83c90fedb3b8abd99d782db35aba8e4d7bb5
 ---
 
 <!-- @import "[TOC]" {cmd="toc" depthFrom=1 depthTo=6 orderedList=false} -->
@@ -166,14 +163,15 @@ env {
 
 ## 流程语言（pipeline language)
 
-在process和channel之间能够使用nextflow特有的语言特性。
+nextflow本身有一套语法格式，是groovy的超集，可在process和channel之间使用nextflow特有的语言特性。基本语法为：
 
-输出:`println "hello world"`
-变量：`x = 1`
-列表： `myList=[1,2,3,4]`
-Maps: `scores = [ "Brett":100, "Pete":"Did not finish", "Andrew":86.87934 ]`， 相当于Python的字典。
-多变量赋值:`(a, b, c)=[10,20,'FOO']`， 和Python一样。
-条件语句：
+- 屏幕输出:`println "hello world"`
+- 变量赋值：`x = 1`，多变量赋值:`(a, b, c)=[10,20,'FOO']`， 和Python一样。
+- 数据类型：数值，字符，布尔，日期
+- 数据格式：列表（list），哈希表（maps）对应python的列表（list）和字典（dict）
+    - 列表：`myList=[1,2,3,4]`
+    - Maps: `scores = [ "Brett":100, "Pete":"Did not finish", "Andrew":86.87934 ]`
+- 条件语句：if-else，和C语言相通
 
 ```if-else
 x = Math.random()
@@ -184,15 +182,19 @@ else {
     println "You win"
 }
 ```
+
 字符串:
+
 ```python
 a = "world"
 print "hello" + a + "\n"
 println "hello $a \n"
 ```
+
 列表中的字符串可以通过join方法连接。字符串支持多行，用三个引号
 
 闭包，简单的说就是一组能被当作参数传递给函数的代码
+
 ```python
 square = { it * it }
 [1,2,3,4].collect(square)
@@ -200,14 +202,15 @@ square = { it * it }
 
 正则表达式
 文件读写：操作之前需要创建文件系统对象（file system object)
-```
+
+```nextflow
 myFile = file('some/path/to/my_file.file')
 ```
+
 文件操作包括： 读取，创建目录，创建连接，拷贝文件，移动文件，重命名，删除，确认属性，
 
-
-
 process分为五个部分
+
 ```nextflow
 process < name > {
 
@@ -233,12 +236,14 @@ process < name > {
 ## Channels
 
 channel是一个连接两个process的非阻塞无向FIFO队列，由两个特性：
+
 1. 发出信息，异步操作，瞬间完成
-2. 接受数据，阻塞操作
+1. 接受数据，阻塞操作
 
 channel可以隐式由process输出创建，或者用如下方法显式定义
+
 - create `channelObj = Channel.create()`
-- empty 
+- empty
 - from `ch = Channel.from( 1, 3, 5, 7 )`
 - fromPath `myFileChannel = Channel.fromPath( '/data/some/bigfile.txt' )` 支持glob匹配
 - fromFilePairs `Channel.fromFilePairs('/my/data/SRR*_{1,2}.fastq')`
@@ -246,6 +251,7 @@ channel可以隐式由process输出创建，或者用如下方法显式定义
 - watchPaht
 
 还能使用Operator转换channel传输中的数据
+
 - 过滤
 - 塑形
 - 分割
