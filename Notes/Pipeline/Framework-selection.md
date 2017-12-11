@@ -1,5 +1,5 @@
 ---
-title: 框架工具选择b
+title: 框架工具选择
 author: Zhougeng Xu
 date: December 5, 2017
 tags: 框架, framework
@@ -12,21 +12,6 @@ output:
 CJKmainfont: PingFang SC
 mainfont: Monaco
 ---
-
-<!-- @import "[TOC]" {cmd="toc" depthFrom=1 depthTo=6 orderedList=false} -->
-<!-- code_chunk_output -->
-
-* [框架工具选择](#框架工具选择)
-	* [nexflow起步](#nexflow起步)
-	* [nexflow基本概念：](#nexflow基本概念)
-	* [流程语言（pipeline language)](#流程语言pipeline-language)
-	* [processes](#processes)
-	* [Channels](#channels)
-	* [实例：开发出多样本SNP/InDel检测流程](#实例开发出多样本snpindel检测流程)
-		* [配置参考基因组和FASTQ文件](#配置参考基因组和fastq文件)
-
-<!-- /code_chunk_output -->
-
 # 框架工具选择
 
 A review of bioinformatics pipeline framework 的作者对已有的工具进行很好的分类
@@ -49,7 +34,7 @@ A review of bioinformatics pipeline framework 的作者对已有的工具进行�
 
 就目前来看，pipeline frameworks & library 这部分的框架中 [nextflow](https://github.com/nextflow-io/nextflow) 是点赞数最多的生物学相关框架。所以我就开始学习了nextflow, 只可惜nextflow在运行时需要创建fifo，而在NTFS文件系统上无法创建，所以Ubuntu On Windows10是玩不转的。
 
-## nexflow起步
+# nexflow起步
 
 nextflow基于JAVA, 安装有两种方式：
 
