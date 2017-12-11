@@ -1,27 +1,63 @@
 ---
-title: 鼠耳芥不定根自然变异相关位点定位
+title: 鼠耳不定根自然变异相关位点定位
 author: Xu Zhougeng
 ---
-# 鼠耳芥不定根自然变异相关位点定位
+# 研究背景和研究意义
 
-## 研究背景和研究意义
+## 研究背景
 
-### 研究背景
+植物生长发育研究大多使用人为产生的突变群体或者含目标变异的自然群体而非种间杂交后代。在数十万年的演化过程中，自然界产生大量种间杂交变异群体，是研究植物发育和基因组进化的宝贵资源[@NasrallahArabidopsisSpeciesHybridsEmerging2000]。对异源四倍体 _Arabidopsis suecica_物种形成的研究发现，拟南芥属(_Arabidopsis_)的物种能较容易地与其他近缘物种其他物种杂交形成后代，例如 _A suecica_ 是由 _A. thaliana_ 和 _Cardaminopsis arenosa_ 通过种间杂交形成[@OKaneSynopsisArabidopsisBrassicaceae1997]，并能在实验室环境中人为创造新的物种，如四倍体拟南芥(_A. thaliana_)是在秋水仙素处理后加倍形成[@ChenGenedosagestochastic1998]。随着测序技术的不断发展，研究人员能较为方便地使用基因组学，生物生信学等方法，以拟南芥属物种作为材料研究植物的生长发育、遗传定位和基因组演化。
 
-鼠耳芥(_Arabidopsis halleri_)为多年生植物，二倍体(2n=16)[@Al-ShehbazTaxonomyphylogenyArabidopsis2002]，基因组大小约为256Mbp[57].它以昆虫作为媒介进行授粉，严格异交且自交不亲和[@LlaurensHighpaternaldiversity2008]。鼠耳芥主要分布在中欧和东亚[@PauwelsNuclearchloroplastDNA2012]，栖息地包括山坡，草地，森林边缘和石缝[@Al-ShehbazTaxonomyphylogenyArabidopsis2002;@ClaussPoorlyknownrelatives2006]，是研究重金属耐性的模式植物[@BecherCrossspeciesmicroarraytranscript2004;@WillemsGeneticBasisZinc2007;@MeyerVariabilityzinctolerance2010;@MacnairZinctolerancehyperaccumulation1999]。
+鼠耳芥(_A. halleri_)和琴叶南芥(_A. lyrata_)同属于十字花科，大约在500万年前从模式植物拟南芥(_A. thaliana_)中分离，走上不同的进化道路，因此都与拟南芥具有较高的亲缘性[@Al-ShehbazTaxonomyPhylogenyArabidopsis2002]。鼠耳芥为多年生植物，二倍体(2n=16) [@Al-ShehbazTaxonomyPhylogenyArabidopsis2002]，基因组大小约为256Mbp[@JohnstonEvolutiongenomesize2005]。 它以昆虫作为媒介进行授粉，自交不亲和，属于严格异交[@LlaurensHighpaternaldiversity2008]。鼠耳芥主要分布在中欧和东亚，栖息地包括山坡，草地，森林边缘和石缝[@Al-ShehbazTaxonomyPhylogenyArabidopsis2002]。琴叶南芥为二倍体植物，拥有8条染色体，基因组大小约为206.7 Mb，与拟南芥的序列相似度高达80%[@HuArabidopsislyratagenome2011], 因此能与拟南芥进行杂交，并且杂合后代能继续回交得到子代[@KuittinenComparingLinkageMaps2004]。与拟南芥不同，琴叶南芥为多年生植物，且自交不亲和[@NasrallahArabidopsisSpeciesHybridsEmerging2000]。这些特性使得琴叶南芥成为研究植物物种形成，发育，生态学和进化相关问题较好的材料。
 
-琴叶南芥(_Arbidopsisi lyrata_)
+鼠耳芥和琴叶南芥最早被用于研究植物的金属耐受性相关基因定位。鼠耳芥是一种Zn/Cd超富集植物，迄今为止发现的所有鼠耳芥生态型均能从土壤中超量吸收Zn/Cd离子并转运至地上部位[@Pauwelsbroadscaleanalysispopulation2006;@BertGeneticbasisCd2003]。而琴叶南芥是金属元素非富集型物种，且对Zn/Cd敏感，这意味着鼠耳芥对铜和锌的超富集能力和耐受能力或许是生态学性状。为了在鼠耳芥中定位重金属耐受性相关QTL位点，Glenda等以高度工业污染区的鼠耳芥和普通地区的琴叶南芥作为亲本构建定位群体，使用85个分子标记构建了覆盖大部分鼠耳芥基因组的遗传图谱。最后定位到三个较大的QTL区间(24cM, 4cM,和13cM)，从中推测出3个和金属耐性有关的基因[@WillemsGeneticBasisZinc2007]。
 
-### 研究意义
+气生根是指由非根部组织发生的不定根，能在正常发育中形成也能在逆境响应时发生。气生根一般无根冠和根毛的结构，能起到吸收气体或支撑植物体向上生长，有保持水分的作用。
 
-## 研究目标和内容
+## 研究意义
 
-## 研究方法及可行性分析
+植物在地上部分产生不定根是自然界非常广泛的现象，且在人类生产生活中扮演着重要的角色。不定根具有较高的经济效益，它能够用于林木繁殖，园艺栽培，如草莓和多肉植物的不定根营养繁殖，并且大部分谷物作物都依赖于冠根和支持根，如玉米，水稻。不定根还能固定土壤，避免水土流失维持当地环境稳定，具有生态效益。对植物本身而言，它能让植物在生物和非生物胁迫下得以生存。除了经济和生态效益外，人类生存也依赖于不定根，谷物作物（小麦，水稻和玉米）提供了人类60%以上的卡路里[@SteffensPhysiologyAdventitiousRoots2016]。但是不定根是如何进化来的呢？我们的研究会为不定根的进化问题提供一定的线索，同时为通过种间杂交研究植物性状与进化提供基础。
 
-## 预期的研究成果和创新性
+# 研究目标和内容
 
-## 已有的工作基础
+## 研究目标
 
-## 研究计划及预期进展
+气生根是不定根的一种。我们计划从鼠耳芥和琴叶南芥构建的BC~1~群体筛选出极端表型的两个群体，即一个群体能发育出气生根，而另一个群体缺少该能力。最后和亲本一起送去高通量测序，通过混池样本分析（bulk sample analysis)的方法定位出气生根相关的区间。
 
-## 参考文献
+## 研究内容
+
+第一，数据预处理和变异检测
+
+先将鼠耳芥的两个亲本，琴叶南芥的一个亲本，回交一代的两个极端表型群体的全基因组测序数据通过比对软件BWA(0.7.17)以默认参数[@LiFastaccuratelongread2010]分别比对到琴叶南芥的参考基因组。接着使用SAMtools(v 1.6)对序列进行排序和格式转换[@LiSequenceAlignmentMap2009]，用Picard标记可能存在PCR重复。随后用GATK HaplotypeCaller(v4.0) [@VossFullstackgenomicspipelining2017]检测4个样本的SNP/InDel，最后过滤出高可信度的SNP。
+
+第二，QTL-Seq定位候选区间
+
+基于上一步得到不同样本的SNP数据，进一步筛选出双亲共有的SNP位点。在这些位点上计算出SNP上两个极端表型的频率差异并作图。比较不同染色体上SNP散点图分布趋势的变化，定位出可能的区间。获取区间内所有基因用于后续分析。
+
+第三，基于高量测序开发SNP分子标记进行后续精细定位
+
+BCF~1~的两个极端表型的SNP index差异较小（理论为0.75和1），因此不能单靠SNP在染色体上的分布趋势。为了通过实验的手段验证候选区间，进一步根据琴叶南芥和鼠耳芥之间的差异和常用的酶切位点设计了分布于不同染色体上扩增引物。
+
+# 研究方法及可行性分析
+
+鼠耳芥有不定根，而琴叶南芥无不定根，因此先将鼠耳芥与琴叶南芥进行杂交得到F~1~后代。由于鼠耳芥自交不亲和，为了提高结实率，F~1~后代再与鼠耳芥的姊妹单株进行回交得到BCF~1~。从BCF~1~挑选出表型极端差异的两个群体送去高通量混池测序，和琴叶南芥参考基因组[@HuArabidopsislyratagenome2011]比较从而得到两个样本SNP位点。通过比较两个群体的SNP index差异对目标性状进行定位。
+
+鼠耳芥和琴叶南芥都属于高度杂交植物，基因组杂合度高，遗传定位困难。圆山药(_Dioscorea rotundata_)也具有较为复杂的基因组，已有研究通过QTL-Seq的方式对其性别相关QTL进行定位[@TamiruGenomesequencingstaple2017]。这表明复杂基因组通过合理筛选可信的SNP作为标记，也可以定位到相关基因。
+
+# 预期的研究成果和创新性
+
+我们预期在鼠耳芥中定位不定根相关的基因，为后续基因克隆，基因功能机制和下游分析奠定基础。
+
+通过混池测序定位基因的方法一般都用于同种内的群体，尚未有基于种间杂交的混池测序定位的文献报道。鼠耳芥和琴叶南来自于不同的物种，且染色体数目存在，且都是自交不亲和导致遗传背景复杂。因此开发出一套处理种间杂交的混池测序分析方法能够更多地利用不同物种杂交材料定位目标性状。
+
+# 已有的工作基础
+
+实验室前期已经通过购买收集到鼠耳芥和琴叶南芥一些材料。目前也已得到鼠耳芥与琴叶南芥杂交得到F~1~后代，并且和亲本继续回交的BCF~1~群体。
+
+![](http://oex750gzt.bkt.clouddn.com/17-12-10/21104649.jpg)
+
+通过混池样本分析，大致将气生根相关基因定位在琴叶南芥的第三号染色体上。
+
+# 研究计划及预期进展
+
+# 参考文献

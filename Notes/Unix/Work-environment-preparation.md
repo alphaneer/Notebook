@@ -88,9 +88,9 @@ Thread model: posix
 gcc version 4.8.5 20150623 (Red Hat 4.8.5-16) (GCC)
 ```
 
-不谈安装路径和版本，基本上**差别**就是在配置这一步，而这些参数就需要仔细研究了。
+不谈安装路径和版本，基本上 **差别** 就是在配置这一步，而这些参数就需要仔细研究了。
 
-一个**错误**: 'Link tests are not allowed after GCC\_NO\_EXECUTABLES.' 后来发现是第三步没有在独立的文件下构建Makefile.
+一个 **错误** : 'Link tests are not allowed after GCC\_NO\_EXECUTABLES.' 后来发现是第三步没有在独立的文件下构建Makefile.
 
 参考资料：
 
@@ -132,19 +132,19 @@ CPPFLAGS    C/C++预处理器选项, 如果你自定义的头文件，可以用-
 
 Makfile规则中的编译命令通常遵守如下规范：
 
-1,首先从源代码生成目标文件(**预处理,编译,汇编**)，"-c"选项表示不执行链接步骤；
+1,首先从源代码生成目标文件( **预处理,编译,汇编** )，"-c"选项表示不执行链接步骤；
 
 ```shell
 $(CC) $(CPPFLAGS) $(CFLAGS) example.c   -c   -o example.o
 ```
 
-2,然后将目标文件链接为最终的结果(**链接**)，"-o"选项用于指定输出文件的名字。
+2,然后将目标文件链接为最终的结果( **链接** )，"-o"选项用于指定输出文件的名字。
 
 ```shell
 $(CC) $(LDFLAGS) example.o   -o example
 ```
 
-这些只是约定俗成的惯例，所以有些人会“随性而为”，你也拿他没有办法。尽管将源代码编译为二进制文件的四个步骤由不同的程序(cpp,gcc/g++,as,ld)完成，但是事实上 cpp, as, ld 都是由 gcc/g++ 进行间接调用的。换句话说，**控制了 gcc/g++ 就等于控制了所有四个步骤**。从 Makefile 规则中的编译命令可以看出，编译工具的行为全靠 **CC/CXX CPPFLAGS CFLAGS/CXXFLAGS LDFLAGS** 这几个变量在控制。所以控制这些变量最简单的做法是首先设置与这些 Makefile 变量同名的环境变量并将它们 export 为**环境变量**（全局），然后运行 configure 脚本，大多数 configure 脚本会使用这同名的环境变量代替 Makefile 中的值
+这些只是约定俗成的惯例，所以有些人会“随性而为”，你也拿他没有办法。尽管将源代码编译为二进制文件的四个步骤由不同的程序(cpp,gcc/g++,as,ld)完成，但是事实上 cpp, as, ld 都是由 gcc/g++ 进行间接调用的。换句话说，**控制了 gcc/g++ 就等于控制了所有四个步骤**。从 Makefile 规则中的编译命令可以看出，编译工具的行为全靠 **CC/CXX CPPFLAGS CFLAGS/CXXFLAGS LDFLAGS** 这几个变量在控制。所以控制这些变量最简单的做法是首先设置与这些 Makefile 变量同名的环境变量并将它们 export 为 **环境变量**（全局），然后运行 configure 脚本，大多数 configure 脚本会使用这同名的环境变量代替 Makefile 中的值
 
 - CC/CXX: 指定C/C++编译所在路径，即可以选择不同的版本的编译器进行编译。
 - CPPFLAGS: 这是用于预处理阶段的选项。用于添加不在标准路径`/usr/include`下的头文件。如`CPPFLAGS="-I$HOME/usr/include -I$HOME/usr/include/ncurses"`
@@ -162,16 +162,36 @@ LDFLAGS = -L/var/xxx/lib -L/opt/mysql/lib -Wl,R/var/xxx/lib -Wl,R/opt/mysql/lib
 
 如在执行./configure以前设置环境变量 `export LDFLAGS="-L/var/xxx/lib -L/opt/mysql/lib -Wl,R/var/xxx/lib -Wl,R/opt/mysql/lib"`，注意设置环境变量等号两边不可以有空格，而且要加上引号（shell的用法）。那么执行configure以后，Makefile将会设置这个选项，链接时会有这个参数，编译出来的可执行程序的库文件搜索路径就得到扩展了
 
-除了通过以上几种环境变量为编译器提供头文件和静态和动态库文件的位置信息外，还有一种变量叫做**PKG\_CONFIG\_PATH**, 它从`xx.pc`文件获取读取相应的环境环境。
+除了通过以上几种环境变量为编译器提供头文件和静态和动态库文件的位置信息外，还有一种变量叫做 **PKG\_CONFIG\_PATH** , 它从`xx.pc`文件获取读取相应的环境环境。
 
 **注意**:Linux下编译共享库时，必须加上-fPIC参数，即`export CFLAGS=" -fPIC" CXXFLAGS=" -fPIC"`否则在链接时会有错误提示.这是在编译zsh时候发现明明装了ncurse却还是不能用的共享库的坑。
 
 > fPIC的目的是什么？共享对象可能会被不同的进程加载到不同的位置上，如果共享对象中的指令使用了绝对地址、外部模块地址，那么在共享对象被加载时就必须根据相关模块的加载位置对这个地址做调整，也就是修改这些地址，让它在对应进程中能正确访问，而被修改到的段就不能实现多进程共享一份物理内存，它们在每个进程中都必须有一份物理内存的拷贝。fPIC指令就是为了让使用到同一个共享对象的多个进程能尽可能多的共享物理内存，它背后把那些涉及到绝对地址、外部模块地址访问的地方都抽离出来，保证代码段的内容可以多进程相同，实现共享。
 
+**动态库路径问题**: 由前面可以知道许多大型软件为了减少体积不会完全编译所有功能，而是借助于动态连接技术在运行时加载封装好的动态连接库内的功能。这就涉及一个非常重要的问题，软件如何知道动态链接库所处的位置。动态库搜索路径分两种情况，一种是编译生成可执行文件时，另外一种是运行可执行文件时。
+
+编译生成可执行文件时，动态库的搜索路径顺序如下：
+
+- 首先gcc会找-L选项；
+- 然后再找gcc的环境变量`LIBRARY_PATH`，可以在.profile设置这个环境变量，并且可以通过选项-v查看gcc最终编译时LIBRARY_PATH的值；
+- 再找内定目录: `/lib：/usr/lib：/usr/local/lib`，这些都是当初compile gcc时写在程序内的。
+
+注意上面索顺序是**不会递归**在目录下搜索的。
+
+生成可执行文件后，运行文件时，动态库的搜索路径顺序如下：
+
+- 首先编译目标代码时指定的动态库搜索路径，就是用选项 `-Wl,rpath` 指定程序在运行时动态库的搜索路径，比如gcc -Wl,-rpath,include -L. -ldltest hello.c，在执行文件时会搜索路径./include；
+- 环境变量`LD_LIBRARY_PATH`指定的动态库搜索路径；
+- 配置文件`/etc/ld.so.conf`中指定的动态库搜索路径，即在配置文件中添加动态库的绝对路径，然后运行指令ldconfig是配置文件生效；
+- 默认的动态库搜索路径`/lib:/usr/lib`。
+
+同样上面索顺序是不会递归在目录下搜索的。通常使用动态库简单做法是：把生成的so文件拷贝到/usr/lib中，这样不管是生成可以执行文件时，还是执行程序时，都能找到需要的so文件。但是普通用户没有/usr/lib的写入权限，所有要指定`LD_LIBRARY_PATH`.ls
+
 参考资料:
 
 - [CFLAGS详解](http://blog.csdn.net/xinyuan510214/article/details/50457433)
 - [Makefile编译选项CC与CXX/CPPFLAGS、CFLAGS与CXXFLAGS/LDFLAGS](http://blog.csdn.net/hjwang1/article/details/44497489)
+- [使用gcc时头文件路径和动态链接库路径](http://blog.csdn.net/MaximusZhou/article/details/38559963)
 
 ## 几个必须要装的函数库
 
