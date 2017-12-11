@@ -20,7 +20,10 @@ mainfont: Monaco
 	* [nexflow起步](#nexflow起步)
 	* [nexflow基本概念：](#nexflow基本概念)
 	* [流程语言（pipeline language)](#流程语言pipeline-language)
+	* [processes](#processes)
 	* [Channels](#channels)
+	* [实例：开发出多样本SNP/InDel检测流程](#实例开发出多样本snpindel检测流程)
+		* [配置参考基因组和FASTQ文件](#配置参考基因组和fastq文件)
 
 <!-- /code_chunk_output -->
 
@@ -183,9 +186,9 @@ else {
 }
 ```
 
-字符串:
+- 字符串:
 
-```python
+```java
 a = "world"
 print "hello" + a + "\n"
 println "hello $a \n"
@@ -193,21 +196,32 @@ println "hello $a \n"
 
 列表中的字符串可以通过join方法连接。字符串支持多行，用三个引号
 
-闭包，简单的说就是一组能被当作参数传递给函数的代码
+- 闭包，简单的说就是一组能被当作参数传递给函数的代码.
 
-```python
+```java
 square = { it * it }
 [1,2,3,4].collect(square)
+```
+
+由大括号`{}`包围的表达式会被脚本解释成代码。默认闭包接受一个参数，并将其赋值给变量`it`，可以在创建时自定义。
+
+```java
+printMapClosure = { key, value ->
+    println "$key = $value"
+    }
+[ "Yue" : "Wu", "Mark" : "Williams", "sudha" : "Kumari" ].each(printMapClosure)
 ```
 
 正则表达式
 文件读写：操作之前需要创建文件系统对象（file system object)
 
-```nextflow
+```java
 myFile = file('some/path/to/my_file.file')
 ```
 
 文件操作包括： 读取，创建目录，创建连接，拷贝文件，移动文件，重命名，删除，确认属性，
+
+## processes
 
 process分为五个部分
 
@@ -235,27 +249,174 @@ process < name > {
 
 ## Channels
 
-channel是一个连接两个process的非阻塞无向FIFO队列，由两个特性：
+channel是一个连接两个process的非阻塞无向FIFO队列，有两个特性：
 
 1. 发出信息，异步操作，瞬间完成
 1. 接受数据，阻塞操作
 
-channel可以隐式由process输出创建，或者用如下方法显式定义
+### Channels创建
 
-- create `channelObj = Channel.create()`
-- empty
-- from `ch = Channel.from( 1, 3, 5, 7 )`
-- fromPath `myFileChannel = Channel.fromPath( '/data/some/bigfile.txt' )` 支持glob匹配
-- fromFilePairs `Channel.fromFilePairs('/my/data/SRR*_{1,2}.fastq')`
-- value `expl2 = Channel.value( 'Hello there' )`
-- watchPaht
+channel可以隐式由process输出创建，或者通过_channel factory_显式定义
 
-还能使用Operator转换channel传输中的数据
+- create: 新建一个_channel_，`channelObj = Channel.create()`
+- value：新建仅有一个值（空也是一个值）的_channel_: `expl2 = Channel.value( 'Hello there' )`
+- from: 根据已有的值进行进行创建，`ch = Channel.from( 1, 3, 5, 7 )`
+- fromPath: 根据文件路径创建_channel_, `myFileChannel = Channel.fromPath( '/data/some/bigfile.txt',glob: 'true' )` 支持glob匹配，不检查文件是否为空，允许有如下参数
 
-- 过滤
-- 塑形
-- 分割
-- 结合
-- 复制
-- 数学操作
-- 其他
+参数名|参数描述
+----|----
+glob |   When true interprets characters *, ?, [] and {} as glob wildcards, otherwise handles them as normal characters (default: true)
+type|	Type of paths returned, either file, dir or any (default: file)
+hidden|	When true includes hidden files in the resulting paths (default: false)
+maxDepth|	Maximum number of directory levels to visit (default: no limit)
+followLinks|	When true it follows symbolic links during directories tree traversal, otherwise they are managed as files (default: true)
+relative|	When true returned paths are relative to the top-most common directory (default: false)
+
+- fromFilePairs: 创建配对reads的_channel_ `Channel.fromFilePairs('/my/data/SRR*_{1,2}.fastq')`
+
+参数名|参数描述
+----| ----
+type|	Type of paths returned, either file, dir or any (default: file)
+hidden|	When true includes hidden files in the resulting paths (default: false)
+maxDepth|	Maximum number of directory levels to visit (default: no limit)
+followLinks|	When true it follows symbolic links during directories tree traversal, otherwise they are managed as files (default: true)
+size|	Defines the number of files each emitted item is expected to hold (default: 2). Set to -1 for any.
+flat|	When true the matching files are produced as sole elements in the emitted tuples (default: false).
+
+- watchPath: 时刻检查文件路径是否出现特定文件或者特定文件发生改变。
+
+```java
+Channel
+   .watchPath( '/path/*.fa' )
+   .subscribe { println "Fasta file: $it" }
+```
+
+当路径下出现fa的时候输出"Fasta File: xxx.fa"信息。
+
+### Channels赋值
+
+Channel可以通过两种方式进行复制，一种是`bind()`方法，另一种则是`<<`操作符。
+
+```java
+myChannle = Channel.create()
+# 方法1
+myChannel.bind( 'hello world' )
+# 方法2
+myChannel << 'hello world!'
+```
+
+### Channel事件监测
+
+`subscribe()`使得每次从原始Channel输出的值都能以自定义的函数处理后的形式输出
+
+```java
+// 定义原始channel的值
+source = Channel.from ( 'alpha', 'beta', 'delta' )
+// 自定义函数输出
+source.subscribe {  println "Got: $it"  }
+// 或者类似管道形式
+Channel
+    .from( 'alpha', 'beta', 'lambda' )
+    .subscribe { String str ->
+        println "Got: ${str}; len: ${str.size()}"
+     }
+```
+
+`subscribe()`还允许多个事件处理器，处理不同情形，`onNext`,`onComplete`,`onError`.
+
+### _Channel_中的数据处理：Operators
+
+还能使用Operator转换channel传输中的数据：过滤，塑形，分割，结合，复制，数学操作和其他。数据操作部分在进阶会继续介绍，目前只要了解其他的几个函数：`set,`ifEmpty`,`print`,`println`,`view`,`close`.
+
+- `set`： 将Channnel的值赋予其他Channel.
+- `ifEmpty`的参数值可以是闭包，在这种情况下，如果值为空则会输出闭包内结果。
+- `print`和`println`两者都会输出到console的标准输出，但是后者还会在每一个输出后进行换行。`view`默认情况下类似于`println`，当设置`newLine: false`时类似于于`print`。和前两者最大的不同在于，前两者把结果输出到标准输出后结束Channel,而view会返回一个跟之前一摸一样的Channel,因此能和其他连用。
+- 最后的`close`则是负责**关闭**Channel, 一般Channel会自动被Nextflow关闭，所以不太需要特别声明。
+
+## 实例：开发出多样本SNP/InDel检测流程
+
+核心思想：按照流程逐步开发，不断优化。
+
+### 配置参考基因组和FASTQ文件
+
+问题1：如何读取单个和多个外部的文件？
+
+解决方法：nextflow的脚本语言种提供了`file`用于文件读取，并且允许通配符如`*,?[],{}`.关于通配符，见<https://docs.oracle.com/javase/tutorial/essential/io/fileOps.html#glob>
+
+```java
+params.genome = "$baseDir/../ref/Athalina.fa"
+```
+
+结果会得到包含多个文件的列表。
+
+问题2：如何区分不同样本的PE输入？
+
+解决方法：使用_Channel_的_fromFileParis_方法
+
+```java
+params.reads = "$baseDir/../raw_data/*_{1,2}.{fq,fastq,fq.gz,fastq.gz}"
+Channel
+    .fromFilePairs( params.reads )
+    .ifEmpty { error "Unable to find any reads matching: ${params.reads}" }
+    .set { read_pairs }
+```
+
+最后输出新的_channel_，read_pairs，包含不同的组。
+
+### 对参考基因组建立索引
+
+变异检测需要对参考基因组建立两类索引：BWA索引，GATK索引。前者用于比对，后者用在HC变异检测。
+
+要求：判断是否已经存在索引文件，如果存在则不创建。
+
+解决方案：使用条件语句判断是否存在索引，已存在索引时使用channel,不存在时用process进行创建。
+
+```java
+# 以GATK index 为例
+## 使用正则表达式构建fa_dict的文件名
+fa_dict = params.genome - ~/\.fa|fasta/ + '.dict'
+## 判断gatk dict是否存在，不存在时以process创建，存在时从channel中读取。
+if (!file(fa_dict).exists()){
+    println "building index from GATK HaplotypeCaller from ${params.genome} "
+    process buildGATKDict {
+        publishDir "$baseDir/../ref", mode: 'copy', overwrite: true
+
+        input:
+        file genome from genome_file
+
+        output:
+        file "${genome.baseName}.dict" into gatk_index
+
+        """
+        gatk-launch CreateSequenceDictionary -R $genome -O ${genome.baseName}.dict
+        """
+    }
+} else{
+    gatk_index = Channel.fromPath(fa_dict).view()
+}
+```
+
+从中学到的一些知识点：
+
+- .ifEmpty的闭包无法使用process.
+- 不能存在同名的channel. 企图用channel和process构建同名输出channel得到的教训
+- 可以用正则表达式去掉字符串的部分内容`- ~//`
+- 外部条件语句很强势
+
+最终的代码为：
+
+```java
+params.genome = "$baseDir/../ref/Athalina.fa"
+params.reads = "$baseDir/../data/raw_data/*_{1,2}.{fq,fastq,fq.gz,fastq.gz}"
+
+if (! file(params.genome).exists){
+    exit 1, "${params.genome} is not exists"
+}
+
+
+
+Channel
+    .fromFilePairs( params.reads )
+    .ifEmpty { error "Unable to find any reads matching: ${params.reads}" }
+    .set { read_pairs }
+```
