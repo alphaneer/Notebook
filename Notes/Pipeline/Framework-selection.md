@@ -16,7 +16,7 @@ mainfont: Monaco
 
 A review of bioinformatics pipeline framework 的作者对已有的工具进行很好的分类
 
-![image https://vip.biotrainee.com/assets/images/5-b9Y64zX54qeWQQir.png](https://vip.biotrainee.com/assets/images/5-b9Y64zX54qeWQQir.png)
+![工具推荐](https://vip.biotrainee.com/assets/images/5-b9Y64zX54qeWQQir.png)
 
 作者的看法：
 
@@ -43,7 +43,7 @@ nextflow基于JAVA, 安装有两种方式：
 
 安装之后还需要用`nexflow run hello`测试是否安装成功，安装成功后编写第一个流程`tutorial.nf`
 
-```nexflow
+```java
 #!/usr/bin/nextlfow
 
 params.str = 'Hello world!'
@@ -59,7 +59,7 @@ process splitLetters {
 
 process convertToUpper{
     input:
-    file x fomr letters
+    file x from letters
 
     output:
     stdout result
@@ -76,7 +76,7 @@ result.susribe {
 
 在命令行执行如下命令
 
-```shell
+```bash
 nextflow run tutorial
 # 终端输出内容
 N E X T F L O W  ~  version 0.25.1
@@ -91,7 +91,7 @@ HELLO
 
 nextflow在运行时会在当前路径下生成"work"目录，用于记录运行时每一步的数据。这意味着什么？这意味着你修改了脚本其中一个部分的时候，继续运行可以基于已有的数据，而不需要重新重头开始。我们可以尝试修改其中`convertToUpper`部分。
 
-```nexflow
+```java
 process convertToUpper {
 
     input:
@@ -108,7 +108,7 @@ process convertToUpper {
 
 在原来执行的方式上加上`-resume`参数，
 
-```shell
+```bash
 nextflow run tutorial.nf -resume
 # 终端输出内容
 N E X T F L O W  ~  version 0.25.1
@@ -125,7 +125,7 @@ olleH
 
 nextflow还支持外部输入参数，覆盖已有的设置`params.str = 'Hello world!'`。
 
-```shell
+```bash
 nexflow run tutorial.nf --str 'Hola mundo'
 ```
 
@@ -141,7 +141,7 @@ nexflow run tutorial.nf --str 'Hola mundo'
 
 **配置选项**: 流程的配置文件位于当前目录下的`nextflow.config`，用于设置环境变量等参数，如
 
-```nextflow
+```java
 env {
     PATH="$PWD/bowtie2:$PWD/tophat2:$PATH"
 }
@@ -161,7 +161,7 @@ nextflow本身有一套语法格式，是groovy的超集，可在process和chann
     - Maps: `scores = [ "Brett":100, "Pete":"Did not finish", "Andrew":86.87934 ]`
 - 条件语句：if-else，和C语言相通
 
-```if-else
+```java
 x = Math.random()
 if (x < 0.5) {
    println "You lost"
@@ -210,7 +210,7 @@ myFile = file('some/path/to/my_file.file')
 
 process分为五个部分
 
-```nextflow
+```java
 process < name > {
 
    [ directives ]
@@ -322,6 +322,8 @@ Channel
 
 核心思想：按照流程逐步开发，不断优化。
 
+基本框架为：数据预处理（去接头，去低质量碱基）-> 建立比对索引 -> 序列比对 -> BAM排序 -> （额外处理 ->) 标记重复 -> 第一轮HC检测变异 -> 基于第一轮结果的SNP，第二轮HC 检测变异
+
 ### 配置参考基因组和FASTQ文件
 
 问题1：如何读取单个和多个外部的文件？
@@ -386,7 +388,11 @@ if (!file(fa_dict).exists()){
 - .ifEmpty的闭包无法使用process.
 - 不能存在同名的channel. 企图用channel和process构建同名输出channel得到的教训
 - 可以用正则表达式去掉字符串的部分内容`- ~//`
-- 外部条件语句很强势
+- 外部条件语句可以控制Channel
+
+### 序列比对
+
+要求：比对时根据系统合理分配线程和内存
 
 最终的代码为：
 
