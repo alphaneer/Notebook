@@ -206,7 +206,7 @@ blastn -db nt -remote -query query.fa
 | **send**  | 目标序列结束  |
 | **evalue**  | 期望值  |
 | **bitscore**  | Bit得分  |
-| score  | 原始得分  |
+| **score**  | 原始得分  |
 
 AC： accession
 
@@ -218,6 +218,23 @@ head -n 15 query.txt
 ```
 
 ![](http://oex750gzt.bkt.clouddn.com/17-11-30/68419410.jpg)
+
+对已有序列进行注释时常见的**best hit only**模式命令行
+
+```bash
+blastn -query gene.fa -out gene.blast.txt -task megablast -db nt -num_threads 12 -evalue 1e-10 -best_hit_score_edge 0.05 -best_hit_overhang 0.25 -outfmt "7 std stitle" -perc_identity 50 -max_target_seqs 1
+# 参数详解
+-task megablast : 任务执行模式，可选有'blastn' 'blastn-short' 'dc-megablast' 'megablast' 'rmblastn'
+-best_hit_score_edge 0.05 :  Best Hit 算法的边界值，取值范围为0到0.5，系统推荐0.1
+-best_hit_overhang 0.25 : Best Hit 算法的阈值，取值范围为0到0.5，系统推荐0.1
+-perc_identity 50 : 相似度大于50
+-max_target_seqs 1 : 最多保留多少个联配
+```
+
+仅仅看参数依旧无用，还需要知道BLAST的Best-Hits的过滤算法。假设一个序列存在两个match结果,A和B，无论A还是B，他们的HSP（High-scoring Segment Pair, 没有gap时的最高联配得分）一定要高于`best_hit_overhang`，否则被过滤。如果满足下列条件则保留A
+
+- evalue(A) >= evalue (B)
+- score(A)/length(A) < (1.0-score\_edge)*score(B)/length(B)
 
 ## 术语列表
 

@@ -359,9 +359,9 @@ Channel
 解决方案：使用条件语句判断是否存在索引，已存在索引时使用channel,不存在时用process进行创建。
 
 ```java
-# 以GATK index 为例
 ## 使用正则表达式构建fa_dict的文件名
-fa_dict = params.genome - ~/\.fa|fasta/ + '.dict'
+genome_basename = params.genome - ~/\.fa|fasta/
+fa_dict = genome_basename + '.dict'
 ## 判断gatk dict是否存在，不存在时以process创建，存在时从channel中读取。
 if (!file(fa_dict).exists()){
     println "building index from GATK HaplotypeCaller from ${params.genome} "
@@ -381,6 +381,10 @@ if (!file(fa_dict).exists()){
 } else{
     gatk_index = Channel.fromPath(fa_dict).view()
 }
+## 判断多个文件是否存在
+if (file('${genome_basename}.{amb,ann,bwt,pac,sa}'.size() >=5 ){
+    println "yes"
+}
 ```
 
 从中学到的一些知识点：
@@ -389,25 +393,19 @@ if (!file(fa_dict).exists()){
 - 不能存在同名的channel. 企图用channel和process构建同名输出channel得到的教训
 - 可以用正则表达式去掉字符串的部分内容`- ~//`
 - 外部条件语句可以控制Channel
+- 判断多个文件是否存在参考groovy的开发文档中列表方法<http://www.groovy-lang.org/gdk.html>
+- `file("${genome_basename}.{amb,ann,bwt,pac,sa}")`并不能扫描五个文件，可以根据列表长度进行判断。
+- 一个变量在被一个channel使用后就无法被另一个channel使用，相当于消耗品。
 
-### 序列比对
+### 原始数据预处理
 
-要求：比对时根据系统合理分配线程和内存
+问题：多样本平行数据处理，也就是计算能力够的话直接进行多个样本的同时比对和排序。分析数据如何保存
 
-最终的代码为：
+解决方案：
+
+处理方案：nextflow能够自动分配任务，不需要过多担心。集群运算目前接触不多，不纠结。
 
 ```java
-params.genome = "$baseDir/../ref/Athalina.fa"
-params.reads = "$baseDir/../data/raw_data/*_{1,2}.{fq,fastq,fq.gz,fastq.gz}"
+process map
 
-if (! file(params.genome).exists){
-    exit 1, "${params.genome} is not exists"
-}
-
-
-
-Channel
-    .fromFilePairs( params.reads )
-    .ifEmpty { error "Unable to find any reads matching: ${params.reads}" }
-    .set { read_pairs }
 ```

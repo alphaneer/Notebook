@@ -1,5 +1,5 @@
 ---
-title: 鼠耳不定根自然变异相关位点定位
+title: 鼠耳芥不定根自然变异相关位点定位
 author: Xu Zhougeng
 ---
 # 研究背景和研究意义
@@ -8,11 +8,13 @@ author: Xu Zhougeng
 
 植物生长发育研究大多使用人为产生的突变群体或者含目标变异的自然群体而非种间杂交后代。在数十万年的演化过程中，自然界产生大量种间杂交变异群体，是研究植物发育和基因组进化的宝贵资源[@NasrallahArabidopsisSpeciesHybridsEmerging2000]。对异源四倍体 _Arabidopsis suecica_物种形成的研究发现，拟南芥属(_Arabidopsis_)的物种能较容易地与其他近缘物种其他物种杂交形成后代，例如 _A suecica_ 是由 _A. thaliana_ 和 _Cardaminopsis arenosa_ 通过种间杂交形成[@OKaneSynopsisArabidopsisBrassicaceae1997]，并能在实验室环境中人为创造新的物种，如四倍体拟南芥(_A. thaliana_)是在秋水仙素处理后加倍形成[@ChenGenedosagestochastic1998]。随着测序技术的不断发展，研究人员能较为方便地使用基因组学，生物生信学等方法，以拟南芥属物种作为材料研究植物的生长发育、遗传定位和基因组演化。
 
-鼠耳芥(_A. halleri_)和琴叶南芥(_A. lyrata_)同属于十字花科，大约在500万年前从模式植物拟南芥(_A. thaliana_)中分离，走上不同的进化道路，因此都与拟南芥具有较高的亲缘性[@Al-ShehbazTaxonomyPhylogenyArabidopsis2002]。鼠耳芥为多年生植物，二倍体(2n=16) [@Al-ShehbazTaxonomyPhylogenyArabidopsis2002]，基因组大小约为256Mbp[@JohnstonEvolutiongenomesize2005]。 它以昆虫作为媒介进行授粉，自交不亲和，属于严格异交[@LlaurensHighpaternaldiversity2008]。鼠耳芥主要分布在中欧和东亚，栖息地包括山坡，草地，森林边缘和石缝[@Al-ShehbazTaxonomyPhylogenyArabidopsis2002]。琴叶南芥为二倍体植物，拥有8条染色体，基因组大小约为206.7 Mb，与拟南芥的序列相似度高达80%[@HuArabidopsislyratagenome2011], 因此能与拟南芥进行杂交，并且杂合后代能继续回交得到子代[@KuittinenComparingLinkageMaps2004]。与拟南芥不同，琴叶南芥为多年生植物，且自交不亲和[@NasrallahArabidopsisSpeciesHybridsEmerging2000]。这些特性使得琴叶南芥成为研究植物物种形成，发育，生态学和进化相关问题较好的材料。
+鼠耳芥(_A. halleri_)和琴叶南芥(_A. lyrata_)同属于十字花科，大约在500万年前从模式植物拟南芥(_A. thaliana_)中分离，走上不同的进化道路，因此都与拟南芥具有较高的亲缘性[@Al-ShehbazTaxonomyPhylogenyArabidopsis2002]。鼠耳芥为多年生植物，二倍体(2n=16) [@Al-ShehbazTaxonomyPhylogenyArabidopsis2002]，基因组大小约为256Mbp[@JohnstonEvolutiongenomesize2005]。 它以昆虫作为媒介进行授粉，自交不亲和，属于严格异交[@LlaurensHighpaternaldiversity2008]。鼠耳芥主要分布在中欧和东亚，栖息地包括山坡，草地，森林边缘和石缝[@Al-ShehbazTaxonomyPhylogenyArabidopsis2002]。琴叶南芥为二倍体植物，拥有8条染色体，基因组大小约为206.7 Mb，与拟南芥的序列相似度高达80%[@HuArabidopsislyratagenome2011], 因此能与拟南芥进行杂交，并且杂合后代能继续回交得到子代[@KuittinenComparingLinkageMaps2004]。与拟南芥不同，琴叶南芥为多年生植物，且自交不亲和[@NasrallahArabidopsisSpeciesHybridsEmerging2000]。这些特性使得琴叶南芥成为研究植物物种形成，发育，生态学和进化相关问题较好的材料，因此基因组组装结果及其注释信息比较完善[@HuArabidopsislyratagenome2011;@RawatImprovingAnnotationArabidopsis2015]。
 
 鼠耳芥和琴叶南芥最早被用于研究植物的金属耐受性相关基因定位。鼠耳芥是一种Zn/Cd超富集植物，迄今为止发现的所有鼠耳芥生态型均能从土壤中超量吸收Zn/Cd离子并转运至地上部位[@Pauwelsbroadscaleanalysispopulation2006;@BertGeneticbasisCd2003]。而琴叶南芥是金属元素非富集型物种，且对Zn/Cd敏感，这意味着鼠耳芥对铜和锌的超富集能力和耐受能力或许是生态学性状。为了在鼠耳芥中定位重金属耐受性相关QTL位点，Glenda等以高度工业污染区的鼠耳芥和普通地区的琴叶南芥作为亲本构建定位群体，使用85个分子标记构建了覆盖大部分鼠耳芥基因组的遗传图谱。最后定位到三个较大的QTL区间(24cM, 4cM,和13cM)，从中推测出3个和金属耐性有关的基因[@WillemsGeneticBasisZinc2007]。
 
-气生根是指由非根部组织发生的不定根，能在正常发育中形成也能在逆境响应时发生。气生根一般无根冠和根毛的结构，能起到吸收气体或支撑植物体向上生长，有保持水分的作用。
+不定根(adventitious roots)指的是从植物任何非根部组织发育出的一类根组织，能在正常发育中形成也能在逆境响应时发生，如图。不定根的生长没有固定的部位，能起始于不同类型的细胞，不定根一个保守的特征是它总是从细胞邻接维管组织中起始或者能通过创伤和激素进行诱导[@BelliniAdventitiousRootsLateral2014]。Xu以模式植物拟南芥离体叶片再生不定根为主要模型，并结合目前多种不定根发生的研究体系，归纳总结出根从头再生过程中的三个主要阶段和参与其中的两类细胞。第一阶段是早期信号转导（early signaling）：伤口信号、环境信号和叶片自身发育状态等作为早期信号，被“转换器细胞”（converter cell，主要指叶边缘、叶肉和部分维管细胞）感应。第二阶段是生长素累积（auxin accumulation）：转换器细胞将输入的早期信号转换为生长素信号输出至 “再生潜能细胞”（regeneration-competent cell，主要指维管中的原形成层和部分薄壁细胞）。第三阶段是细胞命运转变（cell fate transition）：再生潜能细胞在生长素指导下发生命运转变，最终形成不定根[@Xunovorootregeneration2018]。但是研究人员对不定根形成的认识还处于初级阶段，不定根形成的分子机理和控制不定根发育的相关基因还需要进一步的深入探索。
+
+![](http://oex750gzt.bkt.clouddn.com/17-12-13/57082869.jpg)
 
 ## 研究意义
 
@@ -58,6 +60,13 @@ BCF~1~的两个极端表型的SNP index差异较小（理论为0.75和1），因
 
 通过混池样本分析，大致将气生根相关基因定位在琴叶南芥的第三号染色体上。
 
+![](http://oex750gzt.bkt.clouddn.com/17-12-12/507076.jpg)
+
 # 研究计划及预期进展
+
+1. 2017年9月到2017年10月：提取表型差异两个BC~1~群体各30单株，送至华大公司混池测序
+1. 2017年10月到2017年11月：初步数据分析，获取两个群体的SNP位点作为分子标记，粗略定位至第三号染色体
+1. 2017年12月到2018年1月：通过不同群体和参考基因组比较后得到的变异信息，开发SNP分子标记
+1. 2018年1月到2018年6月：根据SNP分子标记进行精细定位
 
 # 参考文献
