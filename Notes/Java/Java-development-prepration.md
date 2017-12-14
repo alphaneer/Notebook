@@ -3,7 +3,9 @@ title: Java学习笔记（一）什么是Java，如何准备Java开发环境
 tags: Java
 notebook: Java笔记
 ---
-# 什么是Java
+# Java学习笔记（一）什么是Java，如何准备Java开发环境
+
+## 什么是Java
 
 如果世界上有一门最好的编程语言，那么这门语言肯定就是PHP了（又玩语言梗）。实际上这个世界上不存在所谓的最好的编程语言，仅存在响应时代背景，满足程序员迫切需求的编程语言，Java就是其中之一（最近Python都进小学课本了）。
 
@@ -17,17 +19,17 @@ notebook: Java笔记
 
 Java语言中负责解释执行字节码文件的Java虚拟机(Java Virtual Machine, JVM)。JVM相当是在原来操作系统上又增加了一个于平台无关的统一的操作系统，因此无论底层世界多么复杂，甚至暗流涌动，他都能为外面的字节码提供熟悉的接口。
 
-# 如何准备Java运行环境
+## 如何准备Java运行环境
 
 准备Java安装环境分为三步：下载，安装，添加环境变量。
 
-## 下载
+### 下载
 
 我们需要到Oracle下载Java SE Development Kit8, JDK。你可能会好奇之前不是说Java是Sun公司开发的嘛，为啥要去Oracle下载呢？这是因为Oracle把Sun公司收购了。网址为<http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html>, 接受协议下载对应平台的安装包，我用的Windows x64.
 
 ![](http://oex750gzt.bkt.clouddn.com/17-12-13/96865288.jpg)
 
-## 安装
+### 安装
 
 下载得到的是一个exe文件，一个非常熟悉的Windows安装软件，只要双击666。。不对，是双击下一步，就能完成安装了。注意两点：
 
@@ -38,13 +40,13 @@ Java语言中负责解释执行字节码文件的Java虚拟机(Java Virtual Mach
 
 ![](http://oex750gzt.bkt.clouddn.com/17-12-13/68797252.jpg)
 
-## 设置环境变量
+### 设置环境变量
 
 Java环境变量分两种，一种用于编译和执行`java,javac`的安装路径，一种是用于定位类(.class，javac编译的平台无关字节码)的CLASSPATH。目前仅需要在Windows下设置**java**的环境变量，来一个随意的安装动图。
 
 ![](http://oex750gzt.bkt.clouddn.com/17-12-13/67308866.jpg)
 
-## 编写HelloWorld测试
+### 编写HelloWorld测试
 
 为了测试Java环境是否正确安装，必须要用Java语言让计算机显示"Hello World!" 祈祷后续编程过程顺利。
 

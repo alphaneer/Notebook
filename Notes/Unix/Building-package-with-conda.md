@@ -90,3 +90,30 @@ about:
 conda build pyinstrument
 conda install --use-local pyinstrument
 ```
+
+## 贡献bioconda
+
+第一步设置本地环境,后续基于从github上克隆得到的recipes仓库
+
+```bash
+git clone https://github.com/bioconda/bioconda-recipes.git
+```
+
+第二步更新本地仓库
+
+```bash
+cd bioconda-recipes
+git checkout master
+git pull origin master
+```
+
+第三步,构建隔离的conda环境，用于本地测试。建议每次都更新一遍。
+
+```bash
+# 确保在bioconda-recipes的最上级
+./simulate-travis.py --bootstrap /tmp/miniconda --overwrite
+```
+
+第四步，创建自己的recipe
+
+第五步，本地测试recipe
