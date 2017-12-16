@@ -1,7 +1,7 @@
 ---
 title: Java学习笔记(三)面向对象编程-以构造复数类为例
 tags: Java, OOP
-Notebook: Java学习笔记
+notebook: Java学习笔记
 ---
 # Java学习笔记(三)面向对象编程-以构造复数类为例
 
