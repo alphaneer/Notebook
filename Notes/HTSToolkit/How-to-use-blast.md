@@ -236,6 +236,75 @@ blastn -query gene.fa -out gene.blast.txt -task megablast -db nt -num_threads 12
 - evalue(A) >= evalue (B)
 - score(A)/length(A) < (1.0-score\_edge)*score(B)/length(B)
 
+## 搭建网页BLAST
+
+曾经的BLAST安装后提供wwwblast用于构建本地的BLAST网页工具，但是BLAST+没有提供这个工具，好在BLAST足够出名，也就有人给它开发网页版工具。如[viroBLAST](http://indra.mullins.microbiol.washington.edu/blast/viroblast.php)和[Sequenceserver](http://www.sequenceserver.com/), 目前来看似乎后者更受人欢迎。
+
+有root安装起来非常的容易
+
+```bash
+sudo apt install ruby ncbi-blast+ ruby-dev rubygems-integration npm
+sudo gem install sequenceserver
+```
+
+数据库准备,前面步骤已经下载了拟南芥基因组的FASTA格式数据
+
+```bash
+sequenceserver -d /到/之前/建立/BLAST/文件路径
+```
+
+然后就可以打开浏览器输入IP:端口号使用了。
+
+### Sequenceserver高级用法
+
+**开机启动**：
+
+新建一个`/etc/systemd/system/sequenceserver.service`文件，添加如下内容。注意修改**ExecStart**.
+
+```bash
+[Unit]
+Description=SequenceServer server daemon
+Documentation="file://sequenceserver --help" "http://sequenceserver.com/doc"
+After=network.target
+
+[Service]
+Type=simple
+User=seqservuser
+ExecStart=/path/to/bin/sequenceserver -c /path/to/sequenceserver.conf
+KillMode=process
+Restart=on-failure
+RestartSec=42s
+RestartPreventExitStatus=255
+
+[Install]
+WantedBy=multi-user.target
+```
+
+然后重新加载systemctl
+
+```bash
+## let systemd know about changed files
+sudo systemctl daemon-reload
+## enable service for automatic start on boot
+systemctl enable sequenceserver.service
+## start service immediately
+systemctl start sequenceserver.service
+```
+
+**nginx反向代理**：我承认没有基本的nginx的知识根本搞不定这一步，所以我建议组内使用就不要折腾这个。简单的说就是在nginx的配置文件的server部分添加如下内容即可。
+
+```bash
+location /sequenceserver/ {
+    root /home/priyam/sequenceserver/public/dist;
+    proxy_pass http://localhost:4567/;
+    proxy_intercept_errors on;
+    proxy_connect_timeout 8;
+    proxy_read_timeout 180;
+}
+```
+
+参考资料：<http://www.sequenceserver.com/doc/>
+
 ## 术语列表
 
 引自[BLAST Glossary](https://www.ncbi.nlm.nih.gov/books/NBK62051/)

@@ -65,86 +65,90 @@ notebook: 分析流程
 
 **GEO编号**：GSE101940，一共6个样本，SRR为SRR5874657~SRR587462
 
-**实验设计**：用INTACT方法提取植物干细胞(stem cell)和叶肉细胞(mesophyll cells)的细胞核，然后通过ATAC-Seq比较两者在转录因子上的差别
+**实验设计**：用INTACT方法提取植物干细胞(stem cell)和叶肉细胞(mesophyll cells)的细胞核，然后通过ATAC-Seq比较两者在转录因子上的差别。 前期直接提取细胞的DNA，而ATAC-Seq主要是分析染色体的开放区域，所以比对到细胞器的序列在后期分析中会被丢弃，为了提高数据的利用率，所以作者使用INTACT方法。
 
-**分析流程**：分为数据预处理,Peak-calling和后续分析三步。
-
-- 序列比对：Bowtie2
-- 比对后处理： SAMtools和Picard
-- BAM可视化： IGV, deeptools
-- Peak-Calling: HOMMER
-- THS(转座酶超敏位点) 基因区分布： PVIS网页工具，上游2kb 下游1kb
-- THS 差异分析： HTSeq + DESeq2
-- 转录因子motif分析：RSAT(Regulatory Sequence Analysis Tools), MEME-ChIP, DREME, MEME, CentriMo. 额外数据Cis-BP, DAP-seq
-- 调控基因预测：PeakAnnotator
-- 蛋白互作分析： STRING
-- 结合位点的转录因子预测：FIMO
-- 基因富集分析
+**分析流程**：分为数据预处理,Peak-calling和高级分析三步。
 
 ### 数据预处理
 
 数据预处理步骤分为：质量控制，原始序列比对，比对后去除重复序列和细胞器序列。当然在这之前，先得做一下准备工作，创建工作环境，从SRA下载数据并进行数据解压。
 
-```bash
-# 创建项目文件下
-mkdir -p ATAC-Seq/{data/raw_data,analysis,script,ref}
-# 使用sra-tool prefetch下载数据, 数据保存在~/ncbi/public/sra
-for i in `seq 57 62`;
-do
-    prefetch SRR5874${i} &
-done
-# 数据下载完，用fastq-dump解压
-for i in `seq 57 62`;
-do
-fastq-dump --split-3 --defline-qual '+' --defline-seq '@$ac-$si/$ri length=$rl' --gzip SRR5874${i} -O data/raw_data &
-done
-```
-
 **质量控制**：在数据分析之前先要大致了解手头数据的质量，目前基本就用fastqc了
 
-```bash
-mkdir -p analysis/fastqc
-for i in `seq 57 62`; do fastqc data/raw_data/SRR58746${i}_{1,2}.fastq.gz -o analysis/qc & done
-# multiqc汇总
-multiqc analysis/qc/ -o analysis/qc/
-```
+![](http://oex750gzt.bkt.clouddn.com/17-12-16/20840134.jpg)
 
 FastQC结果大部分都过关，除了在read的各位置碱基含量图上fail。具体原因我还不知道，文章中并没有提到要对原始数据进行预处理。
-
-![](http://oex750gzt.bkt.clouddn.com/17-12-16/20840134.jpg)
 
 **序列比对**: 目前在Peak-calling这里分析的流程中，最常用的比对软件就是Bowtie, 分为Bowtie1和Bowtie2，前者适合25~50bp，后者适用于 > 50bp的情况。此处分析的read长度为50 bp，因此选择bowtie1。
 
 > 使用之前建议先看看两个工具的手册，了解一下参数说明。我也是通过Bowtie2的手册才发现Bowtie2和Bowite其实是两个用途不同的工具，而不是说bowtie2是用来替代bowtie1.
 
-```bash
-# 下载或者链接已有的参考基因组到ref文件下
-ln -s ~/db/Genomes/Athalina/TAIR10/Sequence/TAIR10.fa ref/
-# 建立BOWTIE2 index，或者下载已有的index, 或软连接已有的索引
-bowtie-build --threads 8 ref/TAIR10.fa  ref/TAIR10
-# 注意不要用bowtie2-build
-# 序列比对
-for i in `seq 57 62`;
-do
-bowtie -p 10 -S -m 1 -X 2000  --sam-RG "ID:sample_${i}" \
---sam-RG "PL:illumina" --sam-RG "SM:SRR58746${i}" \
-ref/TAIR10 \
--1 <(zcat data/raw_data/SRR5874658_1.fastq.gz) \
--2 <(zcat data/raw_data/SRR5874658_2.fastq.gz) | \
-samtools sort -@ 6 -m 1G -o analysis/BAM/SRR58746${i}_sorted.bam ;
-done &
-```
+有文献报道使用Bowtie比对到拟南芥参考基因组TAIR10，参数为-X2000, 允许长达2 Kb的片段， -m1仅保留唯一联配。
 
-这里使用Bowtie比对到拟南芥参考基因组TAIR10，参数为-X2000, 允许长达2 Kb的片段， -m1仅保留唯一联配。
+**比对后去(标记)重复**：如果不是PCR-free的建库方法，会有大量重复的read，需要**标记**或**去除**重复。这一步在比对的时候用`samblaster`共同完成。
 
-**比对后去重复和细胞器reads**：
+初步比对后，可以统计下比对到organellar genomesh和nuclear genome的read数量。这个工具可以在shell脚本中用samtools处理，也可以用python的pysam模块.Pysam封装了htslib C-API，提供了SAM/BAM/VCF/BCF/BED/GFF/GTF/FASTA/FASTQ的操作，最新版本已经支持Python3,强烈推荐学习。
+
+![](http://oex750gzt.bkt.clouddn.com/17-12-18/27220737.jpg)
+
+可能这是作者第一次采用INTACT的方式从干细胞和叶肉细胞中提取细胞核做ATAC-Seq，由于植物细胞本身原因，大量read比对到了细胞器上。
+
+**过滤细胞器reads**：由于细胞器DNA蛋白结合少，所以显然更容易被Tn5 转座酶切割，普通的ATAC-Seq的read就会有大量是细胞器的DNA，这就是为啥需要用INTACT技术。
+
+**过滤低比对质量reads**：根据需要可以过滤掉一些Mapping Quality过低的reads，目前看到的标注有MQ>1, MQ >10.
 
 ### Peak Calling
 
+**bigwig定量文件**: 使用deepTools进行标准化和可视化, 一般以RPKM做标准化，默认bin为50。
+
+**Peak Calling**: Peak Calling所用软件和ChIP-Seq是一致的，目前大多为HOMER和MACS2。
+
+```bash
+macs2 callpeak -t  # 处理文件
+    -f BAMPE  # 数据类型
+    --keep-dup all # 保留PICARD和SAMTOOL的重复标记
+    -g 1.2e8 #有效基因组大小，人类为2.7e9，拟南芥为120M
+    --outdir
+    -n #实验名
+    -p # p值
+    --broad # 根据相联的附近高度富集区域找broad peak
+    --broad-cutoff
+
+```
+
+**数据可视化**: Peak Calling结果的可视化作图
+
+- [deepTools](http://deeptools.readthedocs.io/en/latest/)
+- [ngsplot](https://github.com/shenlab-sinai/ngsplot)
+- [CEAS](http://liulab.dfci.harvard.edu/CEAS/usermanual.html)
+
 ### 下游分析
+
+转录因子(transcription factor, TF)：凡是转录起始过程中必须的蛋白质，只要它不是RNA聚合酶的组分，就可将其定义为转录因子。许多转录因子是通过识别DNA上的顺式作用元件而发挥功能，但结合DNA并不是转录因子的唯一作用方式。转录因子还可通过识别另一种因子发挥作用，或识别RNA聚合酶，或只是和其他几种蛋白质一起组成复合体。
+
+在真核生物中，转录因子需要结合到开放的染色质结构，因此核小体八聚体先在启动子上被去除才能让转录因子进行结合。
 
 - ATAC-Seq peak-calling: ZINBA 参数 window size=300bp, offset=75bp. 保留先验概率大于0.8.
 - 基于染色质注释的ATAC-Seq插入大小富集分析：计算和各个染色质状态重叠的PE序列片段长度分布。
 - 核小体位置：首先将read分组， 低于100bp的read为零核小体； 180 ~ 247 bp单核小体；315~473为双核小体；558~615bp为三核小体（原因如下图）。双核小体reads被分成2个reads，三核小体被分成3个reads。reads使用Danpos和Dantools(-p 1, -a 1, -d 20, -clonalcut 0)进行分析。使用零核小体作为背景。
 
 ![](http://oex750gzt.bkt.clouddn.com/17-12-15/9883328.jpg)
+
+## ATAC-Seq分析工具总结
+
+简单罗列一下ATAC-Seq数据分析会用到的工具以及用途
+
+- 数据预处理：Bowtie1,Bowtie2,BWA-mem, SAMtools,sambamba, picard,samblaster
+- Peak Calling: HOMER-findPeaks, MACS2, HOTSPOT
+- 差异Peak分析： edgeR, HOMER-getDifferentialPeak,HTSeq + DESeq2
+- GO分析: GeneCodis 3.0, AgriGO
+- KEGG分析
+- 根据距离最近的TSS注释Peak： HOMER-annotatePeaks， ChIPseeker, PeakAnnotator
+- 聚类分析：GeneCluster 3.0(k-means)
+- 数据可视化工具：IGV, DeepTools, Java Treeview,PAVIS web tool
+- Motif分析：HOMER-findMotifsGenome.pl 基于HOMER数据库,MEME-ChIP pipeline(基于repeat-masked fasta), DREME, MEME, CentriMo,RSAT(Regulatory Sequence Analysis Tools),MEME-Suite
+- 转录因子footprints: pyDNase
+- 直系同源基因检测：CoGe SynFind, CoGe SynMap
+- 数据库： 已知motif数据库(Cis-BP,DAP-seq)
+- 蛋白互作分析： STRING
+- 结合位点的转录因子预测：FIMO
