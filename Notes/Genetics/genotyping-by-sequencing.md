@@ -1,5 +1,5 @@
 ---
-title: RAD-Seq data analysi 
+title: RAD-Seq data analysis
 date: 2017/10/23
 tags: RAD-Seq，Genetics
 categories: Genetics
