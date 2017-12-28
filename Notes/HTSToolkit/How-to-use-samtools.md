@@ -1,5 +1,5 @@
 ---
-title: SAM和SAMtools
+title: SAM及其相关工具
 tags: 序列操作 
 notebook: 工具笔记
 ---
@@ -15,7 +15,7 @@ notebook: 工具笔记
 
 <!-- /code_chunk_output -->
 
-# SAM和SAMtools
+# SAM及其相关工具
 
 ## SAM格式介绍
 
@@ -56,9 +56,9 @@ samtools view -h S43S1-M_H3K5FDMXX_L1_sort.bam
 
 其中第一行`@HD`，表示参考基因组的排序情况. 然后`@SQ`则是参考基因组的每一条序列的具体信息，命名和长度。`@PG`记录运行的命令，以便你检查代码。对于GATK还需要提供`@RG`给出每个read所在group的信息，只要保证是独一即可。
 
-### 第二部分| 联配信息
+### 第二部分| 联配必要信息
 
-第二部分具体记录每一个read的联配结果，一共有11列。我将第二张图的信息复制保存到test.sam中，仅仅看第一行
+第二部分具体记录每一个read的联配结果，一共有11+n列。我将第二张图的信息复制保存到test.sam中，仅仅看第一行
 
 ```shell
 samtools view test.sam | head -n1 | tr 't' 'n' | nl
@@ -129,10 +129,128 @@ ST-E00600:109:H3K5FALXX:2:1103:17996:34788      185     Chr1    38      60      
 
 实际上，CIGAR一共有9个字符，分别是M(alignment match),I(insertion),D(deletion),N(skip),S(soft clip),H(hard clip),P(padding),=(sequence match), X(sequence mismatch).值得提醒就是M表示序列能够联配，但是存在碱基不一致，=表示碱基相同。S和H一般用于read前后出现大部分的错配，但是中间能够联配的情况，其中S表示序列会出现在SEQ中，H则不会出现在SEQ列中。
 
-## 使用SAMtools对SAM文件进行操作
+### 第三部分，可选信息
 
-SAM格式是目前用来存放大量核酸比对结果信息的通用格式. 为了高效处理SAM文件， 李恒写了SAMtools, 文章在2009年发表在bioinformatics上。
+除了之前的11列必须要有的信息外，后面的其他列都是不同的比对软件自定义的额外信息，称之为标签（TAG)。标签的格式一般为`TAG:TYPE:VALUE`，比如说`NM:i:4 MD:Z:1C53C22G69G1 AS:i:136 XS:i:0`。这部分内容见<http://samtools.github.io/hts-specs/SAMtags.pdf>. 介绍几个比较常见的标签
+
+- NM: 编辑距离(edit distance)
+- MD: 错配位置/碱基(mismatching positions/bases)
+- AS: 联配得分(Alignment score)
+- BC: 条码序列（barcode sequence)
+- XS: 次优联配得分(suboptimal alignment score)
+
+## 能用于处理SAM格式的工具们
+
+后续演示所用数据通过如下方法获取
+
+```bash
+# efetch下载参考基因组
+mkdir -p ~/biostar/refs/ebola
+cd ~/biostar
+efetch -db=nuccore -format=fasta -id=AF086833 > ~/refs/ebola/1976.fa
+REF=~/biostar/refs/ebola/1976.fa
+# 构建索引
+bwa index $REF
+bowtie2-build $REF $REF
+# 获取10000行的fastq PE数据
+mkdir -p ~/biostar/fastq
+cd ~/biostar/fastq
+fastq-dump -X 10000 --split-files SRR1972739
+R1=~/biostar/fastq/SRR1972739_1.fastq
+R2=~/biostar/fastq/SRR1972739_2.fastq
+```
+
+处理SAM的命令行工具有`samtools`,`bamtools`,`picard`,`sambamba`,`samblaster`等，其中`samtools`和`bamtools`和`picard`比较全能，功能中存在重叠，更多是互补，而`sambamba`和`samblaster`则是运行速度更快，功能不太全。
+
+### 使用SAMtools创建SAM,BAM和CRAM
+
+SAM格式是目前用来存放大量核酸比对结果信息的通用格式，也是人类能够“直接”阅读的格式类型，而BAM和CRAM是为了方便传输，降低存储压力将SAM进行压缩得到的格式形式。 为了高效处理SAM文件，李恒写了配套的SAMtools, 文章在2009年发表在bioinformatics上，由于samtools的版本经常更新，如果有些工具用不了，你或许要更新版本了。
+
+如果不加任何其他参数，比对软件就能得到“标准”的SAM格式的文件。
+
+```bash
+bwa mem $REF $R1 $R2 > bwa.sam
+bowtie2 -x $REF -1 $R1 -2 $R2 > bowtie.sam
+```
+
+原始SAM格式体积又大，没有排序，不利于后续的分析操作，所以需要经过几步的格式转换成为BAM。1.3版本之后的samtools可以一步进行格式转换和排序.
+
+**注**，BAM格式必须要建立索引才能快速读取指定位置的信息。
+
+```bash
+# 1.3版本前
+samtools view -bS bwa.sam > bwa.bam
+samtools sort bwa.bam > bwa_sorted.bam
+samtools index bwa_sorted.bam
+# 1.3版本后
+samtools sort bwa.sam > bwa_sorted.bam
+samtools index bwa_sorted.bam
+```
+
+CRAM是比BAM压缩更加高压的格式，原因是它是基于一个参考序列，这样子就能去掉很多冗余的内容。
+
+```bash
+samtools sort --reference $REF -O cram bwa.sam > bwa.cram
+samtools index bwa.cram
+```
+
+这一小节学习了两个samtools子命令:`sort`和`index`，前者能一边排序一边进行格式转换，后者则是对BAM进行索引。
+
+### 使用SAMtool查看/过滤/转换SAM/BAM/CRAM文件
+
+上一节得到的SAM/BAM/CRAM文件都可以用samtools的`view`进行更加复杂的操作，只不过要注意读取CRAM格式需要提供参考序列，不然打不开。
+
+```bash
+samtools view bwa_sorted.bam
+samtools view -T $REF bwa.cram
+```
+
+samtools的`view`在增加额外参数后能实现更多的操作，比如说SAM和BAM/CRAM之间的格式转换(-b, -c, -T)，过滤或提取出目标联配(-t,-L ,-r,-R,-q,-l,-m,-f,-F,-G), 举几个例子说明
+
+```bash
+# 保留mapping quality 大于 10的结果
+samtools view -q 10 bwa_sorted.bam -b -o bwa_sorted_mq10.bam
+# 统计结果中恰当配对的结果(0x3 3 PARIED,PROPER_PAIR)
+samtools view -c -f 3 bwa_sorted.bam
+# 或反向选择
+samtools view -c -F 3 bwa_sorted.bam
+```
+
+### 使用PrettySam更好的可视化SAM文件
+
+尽管我上面说SAM是适合人类阅读的数据，但是直接读SAM还是挺费脑子的。GitHub上有一个PrettySam能够更好的展示SAM/BAM文件，虽然感觉没多大实际效果，但是有利于我们方便了解SAM格式，项目地址为<http://lindenb.github.io/jvarkit/PrettySam.html>.
+
+他的安装比较麻烦，需要JDK版本为1.8且是Oracle, 以及GNU Make >=3.81, curl/wget, git 和 xslproc.安装如下
+
+```bash
+git clone "https://github.com/lindenb/jvarkit.git"
+cd jvarkit
+make prettysam
+cp dist/prettysam.jar ~/usr/jars/
+```
+
+使用起来非常简单，效果也比较酷炫，比较适合演示用。
+
+```bash
+java -jar usr/jars/prettysam.jar ~/biostar/ebola.sam --colors
+```
+
+![](http://oex750gzt.bkt.clouddn.com/17-12-25/64951454.jpg)
+
+### 为SAM/BAM添加Read Groups
+
+使用GATK分析BAM文件时需要BAM文件的header里有RG部分，`@RG`至少由三个记录(ID,LB,SM)组成，需要根据实际情况增加。RG可以在前期比对时添加RG部分，也可以在后续处理时增加
+
+```bash
+TAG='@RG\tID:xzg\tSM:Ebola\tLB:patient_100'
+# Add the tags during alignment
+bwa mem -R $TAG $REF $R1 $R2 | samtools sort > bwa.bam
+samtools index bwa.bam
+# Add tags with samtools addreplacerg
+samtools addreplacerg -r $TAG bwa_sorted.bam -o bwa_sorted_with_rg.bam
+```
 
 ## 参考资料
 
 - [Sequence Alignment/Map Format Specification](http://samtools.github.io/hts-specs/SAMv1.pdf)
+- [SAM tags](http://samtools.github.io/hts-specs/SAMtags.pdf)

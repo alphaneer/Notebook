@@ -198,7 +198,8 @@ printMapClosure = { key, value ->
 ```
 
 正则表达式
-文件读写：操作之前需要创建文件系统对象（file system object)
+
+**文件读写**：操作之前需要创建文件系统对象（file system object)
 
 ```java
 myFile = file('some/path/to/my_file.file')
