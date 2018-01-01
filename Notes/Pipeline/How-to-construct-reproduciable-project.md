@@ -65,9 +65,15 @@ reference/
 mkdir -p reference/{genome/TAIR10,index/{BWA/TAIR10,HISAT2/TAIR10},blastdb,gtf/{TAIR,Phytozome},SnpEff}
 ```
 
-## 统计
+## 软件版本控制
 
-## 项目结构以版本控制
+### 手动管理软件版本
+
+### 使用conda管理软件版本
+
+### 使用docker管理软件版本
+
+## 项目版本控制
 
 为了保证项目的可重复性，就需要为每一个项目创建独立的文件夹，通过不同的文件命名实现脚本的可重复运行。
 
@@ -96,3 +102,36 @@ variant_calling/
     └── Shell
 
 ```
+
+## 加餐：原始数据管理
+
+对于公司分析而言，原始数据就存放在项目中，等项目交付之后，将项目进行归档存放，后续甲方需要重新分析再翻出来即可。如果甲方有保密要求，这些数据再交付之后就需要立刻被删掉。也就是说上面的几条原则基本就够用了，这里仅仅是想给你展现出另一种可能。
+
+首先得把原始数据尽可能分开摆放，树形结构符合人类思维模式，比如说我先根据数据的来源，是自家的，还是公共数据库，然后根据测序的主体，DNA还是RNA,还是互作(DNA-RNA)。DNA还可以根据研究类型，是重测序还是基因组组装，还是看染色体的结构(ATAC-Seq,Hi-C), RNA可以分为编码RNA和非编码RAN。
+
+```bash
+# 建立文件夹
+mkdir -p raw-data/{public,private/{DNA/{de-novo,resequence,structure},RNA/{mRNA,ncRNA,structure},interaction/{DNA-protein,DNA-RNA}}}
+# 查看结构
+tree raw-data
+raw-data/
+├── private
+│   ├── DNA
+│   │   ├── de-novo
+│   │   ├── resequence
+│   │   └── structure
+│   ├── interaction
+│   │   ├── DNA-protein
+│   │   └── DNA-RNA
+│   └── RNA
+│       ├── mRNA
+│       ├── ncRNA
+│       └── structure
+└── public
+```
+
+其次得构思原始数据的**元信息**(metadata)应该如何组织，能够在以后查询的时候明白这个数据的意义，也能方便在上传公共数据库时进行登记。
+
+| study |  owner | organism |  design | platform | library | path  |
+| ---   |  ----- | -----    |  -----  |  -----   | ------  | ----- |
+| 项目名 | 谁做的 | 哪个物种  | 实验怎么设计 | 哪个平台 | 文库怎么建 | 原始数据的文件夹路径 |

@@ -8,6 +8,59 @@ notebook: Python笔记
 
 # Python for Data Analysis 学习笔记
 
+## 前言与案例
+
+### 前言
+
+使用Python的几个原因：
+
+- Python目前有比较强大的数据分析库： pandas, scikit-learn
+- Python和C与FORTRAN的交互比较容易，可以使用C和FROTRAN的库处理线性代数，优化问题，积分和快速傅里叶变换
+- Python既能用于探索性研究，设计原型机，并且也能构建生产系统。如果使用R/SAS，后续还得用Java, C#, C++实现生产系统的代码
+
+不用Python的理由也有：
+
+- 运行速度太慢。不过和人力相比起来，计算机成本不算啥
+- Python有一个被人嫌弃的全局解释锁(global interpreter lock, GIL)，不能使用多线程，怎么玩集群！
+
+不过目前有PyPy等项目可以加速，初学者目前不需要担心这个运行速度问题，更大的问题是你想不出数据分析方案。
+
+必要的Python库：Numpy(Python数值计算的基石),pandas(将R的data.frame在Python中进行实现), matplotlib(Python最棒的图形库), IPython和Jupyter(效率神器), SciPy(科学计算常用库), scikit-learn(机器学习少不了它), statsmodels(Python的统计分析库)
+
+Python最佳发行版: Anaconda
+
+Python版本：Python3是未来趋势
+
+Python社区和会议：pydata,, pystatsmodels
+
+约定俗成的几行代码:
+
+```Python
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+import statsmodels as sm
+```
+
+一些术语:
+
+- **Mugne/munging/wrangling**: 通常翻译成数据清理，指的是非结构化数据和混乱的数据经过一系列的处理成为结构和整齐的数据形式
+- **pseudocode**： 伪代码，就是不能直接运行的代码，主要表现思想
+- **Syntactic sugar**: 语法糖， 不是新的语言特性，仅仅是将一些语法变得更加好写，好用而已。虽然大家经常会吐槽XXX不就是语法糖嘛，但是用的时候一点都不含糊。
+
+### 案例
+
+在正式开始使用Python进行数据分析的时候，先了解Python能做什么能够提高我们学习的信心。作者举了几个例子，用来体现数据分析的常规流程：读取、写入数据，准备数据，格式变换，建模和计算，可视化展示。
+
+所用数据可以在<https://github.com/wesm/pydata-book>进行下载
+
+```bash
+git clone https://github.com/wesm/pydata-book.git
+```
+
+**案例一**：usa.gov的短域名数据
+
 ## Python基础
 
 ### Python数据类型和数据结构

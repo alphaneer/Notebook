@@ -62,7 +62,7 @@ tree -d snpEff_v4_3_ENSEMBL_BFMPP_32_24
 也就只把snpEff这个文件夹覆盖到安装的snpEff文件夹下即可。
 
 ```bash
-mv home/pcingola/snpEff/ snpEff的上一级
+mv home/pcingola/snpEff/ snpEff的上一级(覆盖安装)
 ```
 
 如果你不相信别人的版本，那么最终方案就是自己配置了。
@@ -90,13 +90,17 @@ cd ../genomes
 curl ftp://ftp.arabidopsis.org/home/tair/Genes/TAIR10_genome_release/TAIR10_chromosome_files/TAIR10_chr_all.fas -o TAIR10.fa
 ```
 
-一件比较尴尬的事情是，直接下载基因组序列和注释文件的第一列是对不上，
+> 注：genomes下的fa文件名要和存放的注释、CDS和蛋白序列的文件夹名相同。
+
+一件比较尴尬的事情是，直接下载基因组序列和注释文件的第一列有可能对不上，因为染色体命名存在ensemble和NCBI两套体系。
 
 ![](http://oex750gzt.bkt.clouddn.com/17-12-28/37143155.jpg)
 
 这就需要你用`sed`或者`awk`修改了。
 
 **step2**: 修改snfEff目录下的`snpEff.config`
+
+在Non-standard Databases中新增一行`xxx.genome : 物种名`, 其中xxx要和之前的xxx.fa(参考序列)命名相同，也和之前创建的文件夹名相同。
 
 ![](http://oex750gzt.bkt.clouddn.com/17-12-28/8941595.jpg)
 
