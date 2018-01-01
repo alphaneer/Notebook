@@ -59,7 +59,32 @@ import statsmodels as sm
 git clone https://github.com/wesm/pydata-book.git
 ```
 
-**案例一**：usa.gov的短域名数据
+**案例**：usa.gov的短域名数据， 展示前10个时区
+
+```Python
+%matplotlib inline
+# 读取数据
+import json
+records = [json.loads(line) for line in open(file="../pydata-book/datasets/bitly_usagov/example.txt")]
+# 数据准备，清理
+from pandas import DataFrame, Series
+df = DataFrame(records)
+clean_tz = df['tz'].fillna('Missing')
+clean_tz[clean_tz == ''] = 'Unknown'
+tz_counts = clean_tz.value_counts()
+# 可视化
+tz_counts[:10].plot(kind='barh', rot=0)
+```
+
+![](http://oex750gzt.bkt.clouddn.com/18-1-1/51728371.jpg)
+
+## IPython常用操作
+
+后续的主要数据分析都是利用Ipython，IPython是加强版的Python交互终端，效率神器。一般都是通过命令行`jupyter notebook`启动浏览器版。在Jupyter下，混写markdown语法和Python代码保存为pynb格式，方便让别人理解你的分析过程。
+
+IPython用起来和普通的Python shell差不多，但是记住如下特性能够大大提高效率
+
+![](http://oex750gzt.bkt.clouddn.com/18-1-1/27041535.jpg)
 
 ## Python基础
 
