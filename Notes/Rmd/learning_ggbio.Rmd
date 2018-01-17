@@ -1,0 +1,34 @@
+---
+title: "learn_ggbio"
+author: "xuzhougeng"
+date: "2018年1月16日"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# ggbio学习笔记
+
+`ggbio`基于`ggplot2`开发，能够对**Bioconductor**的提供的数据结构进行可视化，使得展示基因组数据变得更加方便。
+
+## 展示genomic feature
+
+data preparation
+
+```{r}
+library(AnnotationHub)
+ah <- AnnotationHub()
+ath.org <- ah[['AH57965']]
+ath.tx <- ah[['AH52247']]
+```
+
+```{r}
+
+```
+
+
+```{r}
+
+```

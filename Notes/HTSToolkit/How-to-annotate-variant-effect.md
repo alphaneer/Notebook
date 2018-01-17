@@ -129,4 +129,29 @@ java -Xmx8g -jar $snpeff TAIR10 ${id} > `basename $id`;
 
 结果的VCF文件中会在INFO部分增加ANN部分（eff则是EFF）, LOF.
 
-ANN一共有16个fields， 见[Input & Output files](http://snpeff.sourceforge.net/SnpEff_manual.html#input), 一定要去从头到尾看一遍。其中比较重要的是`putative_impact`。
+### 注释结果
+
+ANN一共有16个fields，输出格式和介绍如下
+
+```bash
+Annotation      : T|missense_variant|MODERATE|CCT8L2|ENSG00000198445|transcript|ENST00000359963|protein_coding|1/1|c.1406G>A|p.Gly469Glu|1666/2034|1406/1674|469/557|  |
+SubField number : 1|       2        |    3   |  4   |       5       |    6     |      7        |      8       | 9 |    10   |    11     |   12    |   13    |   14  |15| 16
+```
+
+1. Allele(ALT): 和参考基因组不同的序列
+1. Annotation: 按照序列本体论(SO)描述碱基变异所带来的影响
+1. Putative_impact: 简单的推测该变异的影响程度(HIGH, MODERATE, LOW, MODIFIER)
+1. Gene Name: 该位点所在基因，或者是"intergenic"
+1. Feature type: 下一列的feature，如transcript, motif, miRNA等
+1. Feature ID: 也就是编号了
+1. Transcript biotype: 至少要判断变异在"Coding",还是"Noncoding"
+1. Rank/total: 变异位于第几个外显子或内含子
+1. HGVS.c: 利用HGVS命名系统注释DNA
+1. HGVS.p: 利用HGVS命名系统注释蛋白
+1. cDNA\_position / cDNA\_len: 处于cDNA的哪个碱基
+1. CDS\_position / CDS\_len: 处于CDS的哪个部位
+1. Protein\_position / Protein\_len: 处于氨基酸的哪个位置
+1. Distance to feature: 可选，距离最近的feature的距离
+1. Errors, Warnings or Information messages： 报错，警告等信息
+
+EFF和ANN类似，见[Input & Output files](http://snpeff.sourceforge.net/SnpEff_manual.html#input)了解。
