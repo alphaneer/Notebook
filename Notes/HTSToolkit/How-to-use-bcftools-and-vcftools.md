@@ -8,10 +8,88 @@ comments: true
 ---
 
 <!-- @import "[TOC]" {cmd="toc" depthFrom=1 depthTo=6 orderedList=false} -->
+<!-- code_chunk_output -->
+
+* [VCF/BCF文件格式及其处理工具](#vcfbcf文件格式及其处理工具)
+	* [VCF文件格式](#vcf文件格式)
+		* [对于SNP和较小的indels](#对于snp和较小的indels)
+		* [结构变异(structure variants)](#结构变异structure-variants)
+		* [大规模重排](#大规模重排)
+	* [BCFtools](#bcftools)
+		* [通用参数](#通用参数)
+	* [VCFtools](#vcftools)
+
+<!-- /code_chunk_output -->
 
 # VCF/BCF文件格式及其处理工具
 
 ## VCF文件格式
+
+VCF(Variant Call Format)可以用来存放找到的变异信息，包括三个部分，元信息，标题行和数据行。举个例子
+
+![案例](http://oex750gzt.bkt.clouddn.com/18-1-23/72942819.jpg)
+
+元信息(meta-information)行以"##"起始，首先是VCF的版本信息，后面的INFO定义和解释INFO列出现的ID的含义，FILTER解释说明做了过滤的类型，而FORMAT则解释FORMAT列出现的ID的含义和数据结构，SAMPLE则是告知有哪些样本，都比较的浅显易懂。
+
+标题列固定8列，CHROM(染色体ID)， POS(变异所在位置)， ID(已有注释), REF(参考碱基)， ALT(变异碱基)， QUAL(质量)，FILTER(过滤方式)，INFO(总体信息列)，第9列为FORMAT，定义了后面每个样本的数据存放结构。
+
+对于数据行，我比较在意的是如何在VCF存放和解读变异信息，所以也重点介绍这部分。
+
+### 对于SNP和较小的indels
+
+对于比较小的SNP，或者是插入缺失的碱基在20bp以内的indel，表示比较容易，读起来也不太费劲。
+
+比如说在参考基因组和样本的基因组上某个位置上有如下情况
+
+| 案例 | 序列 | 说明 |
+| --- | ---- | ---- |
+|Ref  |a t C g a | 参考序列 |
+| 1   |a t G g a | C突变成G |
+| 2   |a t - g a | C缺失 |
+| 3   |a t CAg a | C后插入A |
+
+如果只有一个样本，表示方法位:
+
+```bash
+#CHROM  POS ID  REF ALT QUAL    FILTER  INFO   # 解读
+20      3   .   C   G   .       PASS    DP=100 # ref第三位是C，而ALT第三位是G
+20      2   .   TC  T   .       PASS    DP=100 # ref第二位开始时TC，而ALT第二位开始只有T，说明ALT的第三位C缺失
+20      2   .   TC  TCA .       PASS    DP=100 # ref第二位是TC，而ALT第二位开始时TCA，说明多了一个A
+```
+
+如果同时表示三个样本
+
+```bash
+#CHROM  POS ID  REF ALT      QUAL    FILTER  INFO   # 解读
+20      2   .   TC  TG,T,TCA .       PASS    DP=100 # 表示在该位点上有三个突变信息
+```
+
+那么已知ref为`atCga`，根据VCF信息进行重组
+
+```bash
+#CHROM POS ID REF ALT QUAL FILTER INFO # 重组结果
+20     3   .   C   T   .   PASS DP=100 #  atTga
+20     3   .   C CTAG  .   PASS DP=100 #  atCTAGga
+20     2   .   TCG T   .   PASS DP=100 #  aTa
+```
+
+### 结构变异(structure variants)
+
+这里的定义SV，指的是插入缺失大于20bp，小于12kb的情况，先随意感受下VCF是如何处理这种情况。
+
+![](http://oex750gzt.bkt.clouddn.com/18-1-23/5593924.jpg)
+
+即为了表示SV,需要专门定义INFO和FORMAT。根据定义就能对这6个变异进行解读
+
+1. 一个准确的缺失, 发生在2827694-2827708
+1. 一个不太准确的缺失(DEL)，长度大概在205bp(SVLEN=-205)
+1. 一个不太准确的ALU缺失(DEL:ME:ALU),长度大概为209bp(SVLEN=-209)
+1. 一个不太准确的LA插入(INS:ME:L1)
+1. 也差不多
+
+### 大规模重排
+
+暂时不在讨论范围之内。
 
 ## BCFtools
 
@@ -33,15 +111,17 @@ BCFtools是一套处理VCF和BCF格式的工具。它有提供许多子命令实
 
 **mpileup**和**call**是一套组合，最基本的用法为:
 
-```shell
+```bash
 bcftools mpileup -Ou -f reference.fa alignments.bam | bcftools call -mv -Ob -o calls.bcf
+# -m: 允许多倍体
+# -v：表示只输出和基因组不同的位点
 ```
 
 根据不同情况可以添加`call`的参数，比如说 `bcftools call -P 1.1e-3`。
 
 **view**一般要配合`-f LIST`参数共同使用，能有效对VCF/BCF文件内容进行筛选。比如说仅选择非indel, 且ref的reads数小于1， 深度在20和100之间。
 
-```shell
+```bash
 bcftools view -i 'TYPE!="indel" && (DP4[0]+DP4[1])<1 && DP >20 && DP < 100'
 ```
 
@@ -55,7 +135,7 @@ bcftools view -i 'TYPE!="indel" && (DP4[0]+DP4[1])<1 && DP >20 && DP < 100'
 - 逻辑运算符： `&&, ||`
 - INFO标签和FORMAT标签以及列名
 
-```shell
+```bash
 INFO/DP 或 DP
 FORMAT/DV, FMT/DV, 或 DV
 FILTER, QUAL, ID, POS, REF, ALT[0]
@@ -73,14 +153,14 @@ FILTER, QUAL, ID, POS, REF, ALT[0]
 
 其中**FORMAT**可以是：
 
-- 所有的列名：%CHROM, %POS, %ID, %REF, %ALT, %QUAL, %FILTER, 
+- 所有的列名：%CHROM, %POS, %ID, %REF, %ALT, %QUAL, %FILTER
 - INFO列的其中一个：%INFO/标签（如INFO/DP4），此外标签是多值结果，能用`{}`进一步选取，例如`DP4{1}`
 - 基因型: "%GT", "%TGT"
 - 换行符和制表符:"\n","\t"
 
 举个例子：
 
-```shell
+```bash
 bcftools query -f '%CHROM\t%POS\t%REF\t%ALT\t%DP4{0}\t%DP{1}\t%DP{2}\t%DP{3}\n' calls.bcf -o call.delim
 ```
 
@@ -92,28 +172,31 @@ VCFtools: 用于描述性统计数据，计算数据，过滤数据以及数据�
 
 基本用法：
 
-```shell
+```bash
 vcftools [--vcf VCF文件 | --gzvcf gz压缩的VCF文件 --bcf BCF文件] [--out OUTPUT PREFFI]
 ```
 
 他能做的事情：
+
 1. 输出第一条染色体的所有位点等位基因频率
-2. 从输入文件中仅保留SNP位点
-3. 输出两个vcf文件的比较结果
-4. 标准输出不含有filer tag的位点，并且以gzip压缩
-5. 计算每个位点的hardy-weinberg p-value，这些位点不包括缺失的基因型
-6. 计算一系列核酸多态性
+1. 从输入文件中仅保留SNP位点
+1. 输出两个vcf文件的比较结果
+1. 标准输出不含有filer tag的位点，并且以gzip压缩
+1. 计算每个位点的hardy-weinberg p-value，这些位点不包括缺失的基因型
+1. 计算一系列核酸多态性
 
 常用参数如下：
 
 - 和输入输出有关
-```shell
+
+```bash
 --vcf, --gzvcf, --bcf：根据输入文件格式进行选择
 --out, --stdout, -c --temp: 选择合适的输出方式
 ```
 
 - 位点筛选(site filtering)有关参数
-```
+
+```bash
 # 根据位置过滤
 --chr/--not-chr Chr1: 选择染色体
 --from-bp/--to-bp: 选择碱基范围
@@ -135,7 +218,8 @@ vcftools [--vcf VCF文件 | --gzvcf gz压缩的VCF文件 --bcf BCF文件] [--out
 - 样本样本参数（我不常用）
 - 基因型过滤参数（没怎么用）
 - 输出VCF选项
-```
+
+```bash
 --recode
 --recode-INFO-all
 --diff-site: 比较位点
