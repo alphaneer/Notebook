@@ -92,28 +92,97 @@ java -Xmx8G -jar ~/biosoft/Trimmomatic-0.36/trimmomatic-0.36.jar SE -threads 8 -
 
 ```bash
 ~/biosoft/bowtie2-2.3.4/bowtie2 -p 10 --sensitive -x ~/reference/index/bowtie2/hg19/hg19 -U 01-clean-data/SRR3098497_clean.fastq.gz 2> logs/align.log | samtools view -b -q 10 | samtools sort > 02-read-alignment/SRR3098497.bam &
+samtools index SRR3098497.bam
 ```
 
 注：此处过滤了MQ低于10的比对。
 
-可视化
+为了方便在基因组浏览器上展示，还可以用deeptools将BAM有损压缩成bw格式。
+
+```bash
+bamCoverage -p 10  -bs 1 --normalizeUsingRPKM -b 02-read-alignment/SRR3098497.bam -o 02-read-alignment/SRR3098497.bw
+```
+
+BAM/BW可视化:
 
 - reads在基因组位置分布统计
 - reads相对基因位置分布统计
 
 ## peak calling
 
-上面几步都是高通量常规套路，而peak calling则是ChIP-seq/MNase-seq/ATAC-seq所特异的分析方式。peak calling比较常用的软件为[HOMER](http://homer.ucsd.edu/homer/)和[MACS2](https://github.com/taoliu/MACS/). 这里使用MACS进行peak calling， 参数和用法见[如何使用MACS进行peak calling](https://www.jianshu.com/p/6a975f0ea65a)
+上面几步都是高通量常规套路，而peak calling则是ChIP-seq/MNase-seq/ATAC-seq所特异的分析方式。peak calling比较常用的软件为[HOMER](http://homer.ucsd.edu/homer/)和[MACS2](https://github.com/taoliu/MACS/). 这里使用MACS进行peak calling， 参数和用法见[如何使用MACS进行peak calling](https://www.jianshu.com/p/6a975f0ea65a).
 
-## peak可视化
+这篇文章没有用到对照组，因此MACS2得到peak中可能会有一些假阳性的peak。
 
-目前找到peak后常见的可视化类型有：
+```bash
+macs2 callpeak -t 02-read-alignment/SRR3098497.bam -f BAM -g hs -n SRR3098497 --outdir 03-peak-calling/ -q 0.01
+```
+
+得到peak后，常见的可视化类型有：
 
 - peak长度分布柱状图
 - 每个peak的测序情况可视化(IGV, sushi)
 - peaks相对基因位置分布统计
 - 统计peak在各种基因组区域分布情况
 - peak与转录起始位点距离分析
+
+对编码基因,lncRNA, miRNA富集的peak作图：
+
+第一步：获取GENOCODE上的注释文件
+
+```bash
+wget ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_human/release_27/GRCh37_mapping/gencode.v27lift37.annotation.gff3.gz
+gunzip gencode.v27lift37.annotation.gff3.gz
+```
+
+第二步：提取出19836个蛋白编码基因，15778个lncRAN和1881个miRNA的位置。
+
+得根据他们的readme文件知道了这些基因的统计策略：
+
+![统计定义](http://oex750gzt.bkt.clouddn.com/18-1-24/72772284.jpg)
+
+```bash
+# 注意，hg38才会完美一致，而hg19是hg38坐标修改后注释
+## protein coding
+bioawk -c gff '$feature ~/gene/{ if($9 ~/protein_coding/) print $0 }' gencode.v27lift37.annotation.gtf | grep -v 'ENSEMBL' > protein_coding.gtf
+# lncRNA, 先将这些定义存放到lncRNA.txt
+cat lncRNA.txt | tr ',' '\n'| xargs -i bioawk -c gff '$feature ~/gene/{if ($9 ~/{}/) print $0 }' gencode.v27lift37.annotation.gtf >> lncRNA.gtf
+# miRNA
+bioawk -c gff '$feature ~/gene/{if ($9 ~/miRNA/) print $0 }' gencode.v27lift37.annotation.gtf  > miRNA.gtf
+```
+
+第三步：用bedtools的flank和slop分别获取基因body和两侧各10bk的位置范围。
+
+```bash
+# 需要先构建基因组大小的文件
+bioawk -c fastx '{print $name "\t" length($seq) }' ~/reference/genome/hg19/hg19.fa > hg19.genome
+# 构建两翼10kb
+bedtools flank -i protein_coding.gtf -g hg19.genome -b 10000 > protein_coding_flank10kb.gtf-08 55555543
+bedtools flank -i lncRNA.gtf -g hg19.genome -b 10000 > lncRNA_flank10kb.gtf
+bedtools flank -i miRNA.gtf -g hg19.genome -b 10000 > miRNA_flank10kb.gtf
+# 构建基因body外延10kb
+bedtools slop -i protein_coding.gtf -g hg19.genome -b 10000 > protein_coding_slop10kb.gtf
+bedtools slop -i lncRNA.gtf -g hg19.genome -b 10000 > lncRNA_slop10kb.gtf
+bedtools slop -i miRNA.gtf -g hg19.genome -b 10000 > miRNA_slop10kb.gtf
+```
+
+第四步: 找到位于第三部分中定义的区域中的peak, 我的要求peak全部在定义的区域中
+
+```bash
+# 分别查找
+bedtools intersect -F 1 -a 04-peak-filter/protein_coding_ -b 03-peak-calling/SRR3098497_peaks.narrowPeak > 04-peak-filter/protein_coding_flank10kb_peak.gtf
+bedtools intersect -F 1 -a 04-peak-filter/protein_coding_slop10kb.gtf -b 03-peak-calling/SRR3098497_peaks.narrowPeak > 04-peak-filter/protein_coding_slop10kb_peak.gtf
+bedtools intersect -F 1 -a 04-peak-filter/lncRNA_flank10kb.gtf -b 03-peak-calling/SRR3098497_peaks.narrowPeak > 04-peak-filter/lncRNA_flank10kb_peak.gtf
+bedtools intersect -F 1 -a 04-peak-filter/lncRNA_slop10kb.gtf -b 03-peak-calling/SRR3098497_peaks.narrowPeak > 04-peak-filter/lncRNA_slop10kb_peak.gtf
+bedtools intersect -F 1 -a 04-peak-filter/miRNA_flank10kb.gtf -b 03-peak-calling/SRR3098497_peaks.narrowPeak > 04-peak-filter/miRNA_flank10kb_peak.gtf
+bedtools intersect -F 1 -a 04-peak-filter/miRNA_slop10kb.gtf -b 03-peak-calling/SRR3098497_peaks.narrowPeak > 04-peak-filter/miRNA_slop10kb_peak.gtf
+# 合并
+cat *peak.gft > peaks.gtf
+sort -k1,1 -k4,4n peaks.gtf > peaks_sort.gtf
+bedtools merge -i peaks_sort.gtf > peaks.bed
+```
+
+第五步：将上一步找到的peak作图，基于bw文件
 
 ## 下游分析
 

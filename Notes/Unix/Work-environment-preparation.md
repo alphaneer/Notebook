@@ -12,91 +12,6 @@ notebook: *NIX基础
 
 **环境**为CentOS Linux release 7.4.1708 (Core), Linux内核version 3.10.0-693.el7.x86\_64， GCC版本为4.8.5 20150623 (Red Hat 4.8.5-16) (GCC)，
 
-## GCC安装
-
-首先让我们利用系统原来老旧的GCC编译器编译出最新版本的gcc吧，毕竟安装软件的时候，GCC的版本一定要过最低要求。
-
-**第一步**： 下载gcc源码
-
-```shell
-mkdir -p ~/src && cd ~/src
-wget https://mirrors.tuna.tsinghua.edu.cn/gnu/gcc/gcc-7.2.0/gcc-7.2.0.tar.gz
-tar -zxvf gcc-7.2.0.tar.gz && cd gcc-7.2.0
-ls
-```
-
-![](http://oex750gzt.bkt.clouddn.com/17-11-25/81177905.jpg)
-
-**第二步**， 检查系统是否已经具备前置软件, 主要是GMP，MPFR, MPC。这些软件可以到<ftp://gcc.gnu.org/pub/gcc/infrastructure/>找到，然后下载后解压缩，并移动到gcc源码文件夹下。 可以在配置的时候用`--with-gmp, --with-mpfr --with-mpc`指定具体所在路径。
-
-```shell
-cd src
-# GNU Multiple precision Library
-wget ftp://gcc.gnu.org/pub/gcc/infrastructure/gmp-6.1.0.tar.bz2 \
-&& tar -jxvf gmp-6.1.0.tar.bz2 && mv gmp-6.1.0 gcc-7.2.0/gmp
-# isl library
-wget ftp://gcc.gnu.org/pub/gcc/infrastructure/isl-0.18.tar.bz2 \
-&& tar -jxvf isl-0.18.tar.bz2 && mv isl-0.18 gcc-7.2.0/isl
-# MPFR Library
-wget ftp://gcc.gnu.org/pub/gcc/infrastructure/mpfr-3.1.4.tar.bz2 \
-&& tar -jxvf mpfr-3.1.4.tar.bz2 && mv mpfr-3.1.4 gcc-7.2.0/mpfr
-# MPC Library
-wget ftp://gcc.gnu.org/pub/gcc/infrastructure/mpc-1.0.3.tar.gz \
-&& tar -zxvf mpc-1.0.3.tar.gz && mv mpc-1.0.3 gcc-7.2.0/mpc
-```
-
-不过更加人性化的方法是在GCC源码根目录下运行`./contrib/download_prerequisites`，可以自动搞定。
-
-**第三步**：使用`./configure`进行配置。官方**强烈**建议, 配置所在文件夹一定要和源码所在文件夹区分开，此外configure还可以配置很多参数，我的代码如下：
-
-```shell
-mkdir build && cd build
-../configure\
-	--prefix=$HOME/usr \ # 指定安装路径
-	--disable-multilib \ # 取消32位库编译
-	--enable-threads=posix \ # 使用POSIX/Unix98作为线程支持库
-```
-
-基本上这一步不会出现太多的报错，都能够顺利生成Makefile.
-
-**第四步**： 编译. 这步有一个小技巧就是利用多核处理器进行加速，例如`make -j2` 就是双核。
-
-这一部分很慢很慢，因为默认设置下是3个阶段的引导(3-stage bootstrap), 以保证能够编译出完整的GCC系统并且还不会出错，你可以在配置的时候用`--disable-bootstrap`进行关闭。
-
-**第五步**： 安装。如果你编译都成功了，那么安装也不会存在问题了， `make install`.
-
-那么我们编译的GCC和系统自带的有什么**区别**吗？
-
-```shell
-# 从头编译
-$ $HOME/usr/bin/gcc -v
-Using built-in specs.
-COLLECT_GCC=/home/zgxu/usr/bin/gcc
-COLLECT_LTO_WRAPPER=/home/zgxu/usr/libexec/gcc/x86_64-pc-linux-gnu/7.2.0/lto-wrapper
-Target: x86_64-pc-linux-gnu
-Configured with: ../configure --prefix=/home/zgxu/usr --disable-multilib --enable-threads=posix
-Thread model: posix
-gcc version 7.2.0 (GCC)
-# 系统自带
-$ gcc -v
-Using built-in specs.
-COLLECT_GCC=gcc
-COLLECT_LTO_WRAPPER=/usr/libexec/gcc/x86_64-redhat-linux/4.8.5/lto-wrapper
-Target: x86_64-redhat-linux
-Configured with: ../configure --prefix=/usr --mandir=/usr/share/man --infodir=/usr/share/info --with-bugurl=http://bugzilla.redhat.com/bugzilla --enable-bootstrap --enable-shared --enable-threads=posix --enable-checking=release --with-system-zlib --enable-__cxa_atexit --disable-libunwind-exceptions --enable-gnu-unique-object --enable-linker-build-id --with-linker-hash-style=gnu --enable-languages=c,c++,objc,obj-c++,java,fortran,ada,go,lto --enable-plugin --enable-initfini-array --disable-libgcj --with-isl=/builddir/build/BUILD/gcc-4.8.5-20150702/obj-x86_64-redhat-linux/isl-install --with-cloog=/builddir/build/BUILD/gcc-4.8.5-20150702/obj-x86_64-redhat-linux/cloog-install --enable-gnu-indirect-function --with-tune=generic --with-arch_32=x86-64 --build=x86_64-redhat-linux
-Thread model: posix
-gcc version 4.8.5 20150623 (Red Hat 4.8.5-16) (GCC)
-```
-
-不谈安装路径和版本，基本上 **差别** 就是在配置这一步，而这些参数就需要仔细研究了。
-
-一个 **错误** : 'Link tests are not allowed after GCC\_NO\_EXECUTABLES.' 后来发现是第三步没有在独立的文件下构建Makefile.
-
-参考资料：
-
-- installing GCC: <https://gcc.gnu.org/install/>
-- linux下编译gcc6.2.0: <https://www.cnblogs.com/oloroso/p/5984985.html>
-
 ## Linux的编译体系
 
 无管理员权限编译的常规三部曲是`./configure --prefix=$HOME/usr && make && make install`，其中最重要的一步就是`configure`，它所做的任务如下
@@ -192,6 +107,108 @@ LDFLAGS = -L/var/xxx/lib -L/opt/mysql/lib -Wl,R/var/xxx/lib -Wl,R/opt/mysql/lib
 - [CFLAGS详解](http://blog.csdn.net/xinyuan510214/article/details/50457433)
 - [Makefile编译选项CC与CXX/CPPFLAGS、CFLAGS与CXXFLAGS/LDFLAGS](http://blog.csdn.net/hjwang1/article/details/44497489)
 - [使用gcc时头文件路径和动态链接库路径](http://blog.csdn.net/MaximusZhou/article/details/38559963)
+
+## GCC安装(非必要)
+
+首先让我们利用系统原来老旧的GCC编译器编译出最新版本的gcc吧，毕竟安装软件的时候，GCC的版本一定要过最低要求。
+
+**第一步**： 下载gcc源码
+
+```shell
+mkdir -p ~/src && cd ~/src
+wget https://mirrors.tuna.tsinghua.edu.cn/gnu/gcc/gcc-7.2.0/gcc-7.2.0.tar.gz
+tar -zxvf gcc-7.2.0.tar.gz && cd gcc-7.2.0
+ls
+```
+
+![](http://oex750gzt.bkt.clouddn.com/17-11-25/81177905.jpg)
+
+**第二步**， 检查系统是否已经具备前置软件, 主要是GMP，MPFR, MPC。这些软件可以到<ftp://gcc.gnu.org/pub/gcc/infrastructure/>找到，然后下载后解压缩，并移动到gcc源码文件夹下。 可以在配置的时候用`--with-gmp, --with-mpfr --with-mpc`指定具体所在路径。
+
+```shell
+cd src
+# GNU Multiple precision Library
+wget ftp://gcc.gnu.org/pub/gcc/infrastructure/gmp-6.1.0.tar.bz2 \
+&& tar -jxvf gmp-6.1.0.tar.bz2 && mv gmp-6.1.0 gcc-7.2.0/gmp
+# isl library
+wget ftp://gcc.gnu.org/pub/gcc/infrastructure/isl-0.18.tar.bz2 \
+&& tar -jxvf isl-0.18.tar.bz2 && mv isl-0.18 gcc-7.2.0/isl
+# MPFR Library
+wget ftp://gcc.gnu.org/pub/gcc/infrastructure/mpfr-3.1.4.tar.bz2 \
+&& tar -jxvf mpfr-3.1.4.tar.bz2 && mv mpfr-3.1.4 gcc-7.2.0/mpfr
+# MPC Library
+wget ftp://gcc.gnu.org/pub/gcc/infrastructure/mpc-1.0.3.tar.gz \
+&& tar -zxvf mpc-1.0.3.tar.gz && mv mpc-1.0.3 gcc-7.2.0/mpc
+```
+
+不过更加人性化的方法是在GCC源码根目录下运行`./contrib/download_prerequisites`，可以自动搞定。
+
+**第三步**：使用`./configure`进行配置。官方**强烈**建议, 配置所在文件夹一定要和源码所在文件夹区分开，此外configure还可以配置很多参数，我的代码如下：
+
+```shell
+mkdir build && cd build
+../configure\
+	--prefix=$HOME/usr \ # 指定安装路径
+	--disable-multilib \ # 取消32位库编译
+	--enable-threads=posix \ # 使用POSIX/Unix98作为线程支持库
+```
+
+基本上这一步不会出现太多的报错，都能够顺利生成Makefile.
+
+**第四步**： 编译. 这步有一个小技巧就是利用多核处理器进行加速，例如`make -j2` 就是双核。
+
+这一部分很慢很慢，因为默认设置下是3个阶段的引导(3-stage bootstrap), 以保证能够编译出完整的GCC系统并且还不会出错，你可以在配置的时候用`--disable-bootstrap`进行关闭。
+
+**第五步**： 安装。如果你编译都成功了，那么安装也不会存在问题了， `make install`.
+
+那么我们编译的GCC和系统自带的有什么**区别**吗？
+
+```shell
+# 从头编译
+$ $HOME/usr/bin/gcc -v
+Using built-in specs.
+COLLECT_GCC=/home/zgxu/usr/bin/gcc
+COLLECT_LTO_WRAPPER=/home/zgxu/usr/libexec/gcc/x86_64-pc-linux-gnu/7.2.0/lto-wrapper
+Target: x86_64-pc-linux-gnu
+Configured with: ../configure --prefix=/home/zgxu/usr --disable-multilib --enable-threads=posix
+Thread model: posix
+gcc version 7.2.0 (GCC)
+# 系统自带
+$ gcc -v
+Using built-in specs.
+COLLECT_GCC=gcc
+COLLECT_LTO_WRAPPER=/usr/libexec/gcc/x86_64-redhat-linux/4.8.5/lto-wrapper
+Target: x86_64-redhat-linux
+Configured with: ../configure --prefix=/usr --mandir=/usr/share/man --infodir=/usr/share/info --with-bugurl=http://bugzilla.redhat.com/bugzilla --enable-bootstrap --enable-shared --enable-threads=posix --enable-checking=release --with-system-zlib --enable-__cxa_atexit --disable-libunwind-exceptions --enable-gnu-unique-object --enable-linker-build-id --with-linker-hash-style=gnu --enable-languages=c,c++,objc,obj-c++,java,fortran,ada,go,lto --enable-plugin --enable-initfini-array --disable-libgcj --with-isl=/builddir/build/BUILD/gcc-4.8.5-20150702/obj-x86_64-redhat-linux/isl-install --with-cloog=/builddir/build/BUILD/gcc-4.8.5-20150702/obj-x86_64-redhat-linux/cloog-install --enable-gnu-indirect-function --with-tune=generic --with-arch_32=x86-64 --build=x86_64-redhat-linux
+Thread model: posix
+gcc version 4.8.5 20150623 (Red Hat 4.8.5-16) (GCC)
+```
+
+不谈安装路径和版本，基本上 **差别** 就是在配置这一步，而这些参数就需要仔细研究了。
+
+一个 **错误** : 'Link tests are not allowed after GCC\_NO\_EXECUTABLES.' 后来发现是第三步没有在独立的文件下构建Makefile.
+
+参考资料：
+
+- installing GCC: <https://gcc.gnu.org/install/>
+- linux下编译gcc6.2.0: <https://www.cnblogs.com/oloroso/p/5984985.html>
+
+## CMake: 平台无关的编译软件
+
+不同平台有着不同的Make工具用于编译,例如 GNU Make ，QT 的 qmake ，微软的 MS nmake，BSD Make（pmake），Makepp，等等。这些 Make 工具遵循着不同的规范和标准，所执行的 Makefile 格式也千差万别。这样就带来了一个严峻的问题：如果软件想跨平台，必须要保证能够在不同平台编译。而如果使用上面的 Make 工具，就得为每一种标准写一次 Makefile ，这将是一件让人抓狂的工作。
+
+CMake就是针对上面问题所设计的工具：它首先允许开发者编写一种平台无关的 CMakeList.txt 文件来定制整个编译流程，然后再根据目标用户的平台进一步生成所需的本地化 Makefile 和工程文件，如 Unix 的 Makefile 或 Windows 的 Visual Studio 工程。从而做到“Write once, run everywhere”。显然，CMake 是一个比上述几种 make 更高级的编译配置工具。一些使用 CMake 作为项目架构系统的知名开源项目有 VTK、ITK、KDE、OpenCV、OSG 等.
+
+```bash
+wget https://cmake.org/files/v3.10/cmake-3.10.2.tar.gz
+tar xf cmake-3.10.2.tar.gz
+cd cmake-3.10.2
+```
+
+参考资料：
+
+- <http://www.hahack.com/codes/cmake/>
+- <https://www.cnblogs.com/d-blog/p/4617208.html>
 
 ## 几个必须要装的函数库
 

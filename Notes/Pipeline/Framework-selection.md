@@ -32,383 +32,572 @@ A review of bioinformatics pipeline framework 的作者对已有的工具进行�
 
 目前已有的流程可以在[awesome-pipeline](https://github.com/pditommaso/awesome-pipeline) 进行查找。
 
-就目前来看，pipeline frameworks & library 这部分的框架中 [nextflow](https://github.com/nextflow-io/nextflow) 是点赞数最多的生物学相关框架。所以我就开始学习了nextflow, 只可惜nextflow在运行时需要创建fifo，而在NTFS文件系统上无法创建，所以Ubuntu On Windows10是玩不转的。
+就目前来看，pipeline frameworks & library 这部分的框架中 [nextflow](https://github.com/nextflow-io/nextflow) 是点赞数最多的生物学相关框架。只可惜nextflow在运行时需要创建fifo，而在NTFS文件系统上无法创建，所以我选择 _snakemake_ , 一个基于Python写的DSL流程框架。
 
-# nexflow起步
+## 环境准备
 
-nextflow基于JAVA, 安装有两种方式：
+为了能够顺利完成这部分的教程，请准备一个Linux环境，如果使用Windows，则按照[biostarhandbook(一)分析环境和数据可重复](https://www.jianshu.com/p/f8cdb0e10940) 部署一个虚拟机，并安装miniconda3。
 
-- `curl -s https://get.nextflow.io | bash`
-- `conda install -c bioconda nextflow`
+如下步骤会下载所需数据，并安装所需要的软件，并且启动工作环境。
 
-安装之后还需要用`nexflow run hello`测试是否安装成功，安装成功后编写第一个流程`tutorial.nf`
+```bash
+wget https://bitbucket.org/snakemake/snakemake-tutorial/get/v3.11.0.tar.bz2
+tar -xf v3.11.0.tar.bz2 --strip 1
+cd snakemake-snakemake-tutorial-623791d7ec6d
+conda env create --name snakemake-tutorial --file environment.yaml
+source activate snakemake-tutorial
+# 退出当前环境
+source deactivate
+```
 
-```java
-#!/usr/bin/nextlfow
+当前环境下的所有文件
 
-params.str = 'Hello world!'
+```bash
+├── data
+│   ├── genome.fa
+│   ├── genome.fa.amb
+│   ├── genome.fa.ann
+│   ├── genome.fa.bwt
+│   ├── genome.fa.fai
+│   ├── genome.fa.pac
+│   ├── genome.fa.sa
+│   └── samples
+│       ├── A.fastq
+│       ├── B.fastq
+│       └── C.fastq
+├── environment.yaml
+└── README.md
+```
 
-process splitLetters {
-    output:
-    file 'chunk_*' into letters mode flatten
+## 基础：一个案例流程
 
-    """
-    printf '${params.str}' | split -b 6 - chunk_
-    """
-}
+如果你编译过软件，那你应该见过和用过`make`, 但是你估计也没有仔细想过make是干嘛用的。Make是最常用的软件构建工具，诞生于1977年，主要用于C语言的项目，是为了处理编译时存在各种依赖关系，尤其是部分文件更新后，Make能够重新生成需要更新的文件以及其对应的文件。
 
-process convertToUpper{
+`Snakemake`和Make功能一致，只不过用Python实现，增加了许多Python的特性，并且和Python一样非常容易阅读。下面将使用Snakemake写一个**变异检测**流程。
+
+### 第一步：序列比对
+
+Snakemake非常简单，就是写各种**rule**来完成不同的任务。我们第一条**rule**就是将序列比对到参考基因组上。如果在命令行下就是`bwa mem data/genome.fa data/samples/A.fastq | samtools view -Sb - > mapped_reads/A.bam`。 但是按照Snakemake的规则就是下面的写法。
+
+```Python
+# 用你擅长的文本编辑器
+vim Snakefile
+# 编辑如下内容
+rule bwa_map:
     input:
-    file x from letters
-
+        "data/genome.fa",
+        "data/samples/A.fastq"
     output:
-    stdout result
-
-    """
-    cat $x | tr '[a-z]' '[A-Z]'
-    """
-}
-
-result.susribe {
-    println it.trim()
-}
+        "mapped_reads/A.bam"
+    shell:
+        """
+        bwa mem {input} | samtools view -Sb - > {output}
+        """
 ```
 
-在命令行执行如下命令
+解释一下：这几行定义了一个规则(rule)，在这个规则下，输入(input)有两个，而输出(output)只有一个，在`shell`中运行命令，只不过里面的文件都用`{}`形式替代。伪执行一下:`snakemake -np mapped_reads/A.bam`检查一下是否会出错，真实运行情况如下（不带规则，默认执行第一个规则）:
 
-```bash
-nextflow run tutorial
-# 终端输出内容
-N E X T F L O W  ~  version 0.25.1
-Launching `tutorial.nf` [jolly_ride] - revision: 4a11bf2927
-[warm up] executor > local
-[92/fd0b10] Submitted process > splitLetters
-[d3/8f6c61] Submitted process > convertToUpper (2)
-[2c/39e326] Submitted process > convertToUpper (1)
-WORLD!
-HELLO
-```
+![run snakemake](http://oex750gzt.bkt.clouddn.com/18-1-28/67418967.jpg)
 
-nextflow在运行时会在当前路径下生成"work"目录，用于记录运行时每一步的数据。这意味着什么？这意味着你修改了脚本其中一个部分的时候，继续运行可以基于已有的数据，而不需要重新重头开始。我们可以尝试修改其中`convertToUpper`部分。
+### 第二步：推广序列比对规则
 
-```java
-process convertToUpper {
+如果仅仅是上面这样子处理一个文件，还无法体现`snakemake`的用途，毕竟还不如手动敲代码来的方便。`snakemake`的一个有点在于它能够使用**文件名通配**的方式对一类文件进行处理。将上面的`A`改成`{sample}`,就可以将符合`*.fastq`的文件处理成`*.bam`.
 
+```Python
+rule bwa_map:
     input:
-    file x from letters
-
+        "data/genome.fa",
+        "data/samples/{sample}.fastq"
     output:
-    stdout result
-
-    """
-    rev $x
-    """
-}
+        "mapped_reads/{sample}.bam"
+    shell:
+        """
+        bwa mem {input} | samtools view -Sb - > {output}
+        """
 ```
 
-在原来执行的方式上加上`-resume`参数，
+那么，用`snakemake -np mapped_reads/{A,B,C}.bam`，就会发现，他非常机智的就比对了`B.fastq`和`C.fastq`，**而不会**再比对一遍A.fastq, **也不需要**你写一堆的判断语句去手动处理。
+
+![规则统配](http://oex750gzt.bkt.clouddn.com/18-1-28/51232940.jpg)
+
+当然，如果你用`touch data/samples/A.fastq`改变A.fastq的时间戳，他就会认位A.fastq文件发生了改变，那么重复之前的命令就会比对A.fastq。
+
+### 第三步：比对后排序
+
+比对后的文件还需要进一步的排序，才能用于后续分析，那么规则该如何写呢？
+
+```Python
+rule samtools_sort:
+    input:
+        "mapped_reads/{sample}.bam"
+    output:
+        "sorted_reads/{sample}.bam"
+    shell:
+        "samtools sort -T sorted_reads/{wildcards.sample}"
+        " -O bam {input} > {output}"
+```
+
+以之前的输出作为输出文件名，输出到另一个文件夹中。和之前的规则基本相同，只不过这里用到了`wildcards.sample`来获取通配名用作`-T`的临时文件的前缀`sample`实际名字。
+
+运行`snakemake -np sorted_reads/B.bam`，你就会发现他就会非常智能的**先比对再排序**。这是因为`snakemake`会自动解决依赖关系，并且按照依赖的前后顺序进行执行。
+
+### 第四步： 建立索引和对任务可视化
+
+这里我们再写一个规则，对之前的排序后的BAM文件建立索引。
+
+```Python
+rule samtools_index:
+    input:
+        "sorted_reads/{sample}.bam"
+    output:
+        "sorted_reads/{sample}.bam.bai"
+    shell:
+        "samtools index {input}"
+```
+
+目前已经写了三个规则，那么这些规则的执行和依赖关系如何呢？ `snakemake`提供了`--dag`选项用于`dot`命令进行可视化
 
 ```bash
-nextflow run tutorial.nf -resume
-# 终端输出内容
-N E X T F L O W  ~  version 0.25.1
-Launching `tutorial.nf` [berserk_torvalds] - revision: 211d9426dc
-[warm up] executor > local
-[92/fd0b10] Cached process > splitLetters
-[bc/dd002c] Submitted process > convertToUpper (2)
-[9b/ef1aa9] Submitted process > convertToUpper (1)
-!dlrow
-olleH
+snakemake --dag sorted_reads/{A,B}.bam.bai | dot -Tsvg > dag.svg
 ```
 
-你会发现前后两部有一个共同的部分`[92/fd0b10] Cached process > splitLetters`, 也就是说修改后的代码时直接从中间某一步继续，而不是从头到位跑下来。
+![运行流程](http://snakemake.readthedocs.io/en/latest/_images/dag_index.png)
 
-nextflow还支持外部输入参数，覆盖已有的设置`params.str = 'Hello world!'`。
+### 第五步：基因组变异识别
+
+基因组变异识别需要整合之前所有的BAM文件，你可能会打算这样写
+
+```Python
+rule bcftools_call:
+    input:
+        fa="data/genome.fa",
+        bamA="sorted_reads/A.bam"
+        bamB="sorted_reads/B.bam"
+        baiA="sorted_reads/A.bam.bai"
+        baiB="sorted_reads/B.bam.bai"
+    output:
+        "calls/all.vcf"
+    shell:
+        "samtools mpileup -g -f {input.fa} {input.bamA} {input.bamB} | "
+        "bcftools call -mv - > {output}"
+```
+
+这样写的却没有问题，但是以后每多一个样本就需要多写一个输入，太麻烦了。这里就体现出Snakemake和Python所带来的特性了，我们可以用列表推导式的方法搞定。
+
+```Python
+["sorted_reads/{}.bam".format(sample) for sample in ["A","B"]]
+```
+
+进一步，可以在规则外定义`SAMPLES=["A","B"]`，则规则内的输入可以写成`bam=["sorted_reads/{}.bam".format(sample) for sample in SAMPLES]`. 由于列表推导式比较常用，但是写起来有点麻烦，snakemake定义了`expand`进行简化, 上面可以继续改写成`expand("sorted_reads/{sample}.bam", sample=SAMPLES)`
+
+那么最后的规则就是
+
+```Python
+SAMPLES=["A","B"]
+rule bcftools_call:
+    input:
+        fa="data/genome.fa",
+        bam=expand("sorted_reads/{sample}.bam", sample=SAMPLES),
+        bai=expand("sorted_reads/{sample}.bam.bai", sample=SAMPLES)
+    output:
+        "calls/all.vcf"
+    shell:
+        "samtools mpileup -g -f {input.fa} {input.bam} | "
+        "bcftools call -mv - > {output}"
+```
+
+小练习： 请用snakemake生成当前的DAG图。
+
+### 第六步：编写报告
+
+上面都是在规则里执行shell脚本，snakemake的一个**优点**就是可以在规则里面写Python脚本，只需要把`shell`改成`run`，此外还不需要用到引号。
+
+```Python
+rule report:
+    input:
+        "calls/all.vcf"
+    output:
+        "report.html"
+    run:
+        from snakemake.utils import report
+        with open(input[0]) as vcf:
+            n_calls = sum(1 for l in vcf if not l.startswith("#"))
+
+        report("""
+        An example variant calling workflow
+        ===================================
+
+        Reads were mapped to the Yeast
+        reference genome and variants were called jointly with
+        SAMtools/BCFtools.
+
+        This resulted in {n_calls} variants (see Table T1_).
+        """, output[0], T1=input[0])
+```
+
+这里还用到了`snakemake`的一个函数，**report**，可以对markdown语法进行渲染生成网页。
+
+### 第七步：增加**目标规则**
+
+之前运行snakemake都是用的`snakemake 目标文件名`, 除了目标文件名外，snakemake还支持规则名作为目标。通常我们按照习惯定义一个`all`规则，来生成结果文件。
+
+```Python
+rule all:
+    input:
+        "report.html
+```
+
+### 基础部分小结：
+
+总结下学习过程，知识点如下：
+
+- Snakemake基于规则执行命令，规则一般由`input, output,shell`三部分组成。
+- Snakemake可以自动确定不同规则的输入输出的依赖关系，根据时间戳来判断文件是否需要重新生成
+- Snakemake`以{sample}.fa`形式进行文件名通配，用`{wildcards.sample}`获取sample的实际文件名
+- Snakemake用`expand()`生成多个文件名，本质是Python的列表推导式
+- Snakemake可以在规则外直接写Python代码，在规则内的`run`里也可以写Python代码。
+- Snakefile的第一个规则通常是`rule all`，因为默snakemake默认执行第一条规则
+
+## 进阶：对流程进一步修饰
+
+在基础部分中，我们完成了流程的框架，下一步则是对这个框架进行不断完善，比如说编写配置文件，声明不同rule的消耗资源，记录运行日志等。
+
+### 第一步： 声明所需进程数
+
+对于一些工具，比如说bwa，多进程或者多线程运行能够大大加速计算。snakemake使用`threads`来定义当前规则所用的进程数，我们可以对之前的`bwa_map`增加该指令。
+
+```Python
+rule bwa_map:
+    input:
+        "data/genome.fa",
+        "data/samples/{sample}.fastq"
+    output:
+        "mapped_reads/{sample}.bam"
+    threads:8
+    shell:
+        "bwa mem -t {threads} {input} | samtools view -Sb - > {output}"
+```
+
+声明`threads`后，Snakemake任务调度器就会在程序运行的时候是否**并行**多个任务。这主要和参数中的`--cores`相关。比如说
 
 ```bash
-nexflow run tutorial.nf --str 'Hola mundo'
+snakemake --cores 10
 ```
 
-通过如上内容我们了解nextflow的基本工作方式，但是如何用nextflow编写流程则由后续讲解。
+由于总体上就分配了10个核心，于是一次就只能运行一个需要消耗8个核心的`bwa_map`。但是当其中一个`bwa_map`运行完毕，这个时候snakemaek就会同时运行一个消耗8个核心的`bwa_map`和没有设置核心数的`samtools_sort`,来保证效率最大化。因此对于需要多线程或多进程运行的程序而言，将所需的进程**单独编码**，而不是硬编码到shell命令中，能够更有效的使用资源。
 
-## nexflow基本概念：
+### 第二步：配置文件
 
-**processes和channels**: nextflow工作流程由多个完成特定目标的process组成，每个process相互独立，互不干扰，仅仅通过异步FIFO，也就是channels进行数据交流。
+之前的SAMPLES写在了snakefile，也就是意味这对于不同的项目，需要对snakefile进行修改，更好的方式是用一个配置文件。配置文件可以用JSON或YAML语法进行写，然后用`configfile: "config.yaml"`读取成字典，变量名为config。
 
-**Execution abstraction**: nextflow脚本不限于运行环境，会根据实际的电脑配置运行，抽象了执行层。
+`config.yaml`内容为:
 
-**流程语言**: nextflow 有一套自己的语言定义，是[Groovy](https://en.wikipedia.org/wiki/Groovy_(programming_language))的超集， 熟悉JAVA, C/C++就能快速上手。
-
-**配置选项**: 流程的配置文件位于当前目录下的`nextflow.config`，用于设置环境变量等参数，如
-
-```java
-env {
-    PATH="$PWD/bowtie2:$PWD/tophat2:$PATH"
-}
+```YAML
+samples:
+    A: data/samples/A.fastq
+    B: data/samples/B.fastq
 ```
 
-如此，bowtie2和tophat2就能在流程文件中直接调用
+> YAML使用缩进表示层级关系，其中缩进必须用空格，但是空格数目不重要，重要的是所今后左侧对齐。上面的YAML被Pytho读取之后，以字典保存，形式为`{'samples': {'A': 'data/samples/A.fastq', 'B': 'data/samples/B.fastq'}}`
 
-## 流程语言（pipeline language)
+而snakefile也可以改写成
 
-nextflow本身有一套语法格式，是groovy的超集，可在process和channel之间使用nextflow特有的语言特性。基本语法为：
-
-- 屏幕输出:`println "hello world"`
-- 变量赋值：`x = 1`，多变量赋值:`(a, b, c)=[10,20,'FOO']`， 和Python一样。
-- 数据类型：数值，字符，布尔，日期
-- 数据格式：列表（list），哈希表（maps）对应python的列表（list）和字典（dict）
-    - 列表：`myList=[1,2,3,4]`
-    - Maps: `scores = [ "Brett":100, "Pete":"Did not finish", "Andrew":86.87934 ]`
-- 条件语句：if-else，和C语言相通
-
-```java
-x = Math.random()
-if (x < 0.5) {
-   println "You lost"
-}
-else {
-    println "You win"
-}
+```Python
+configfile: "config.yaml"
+...
+rule bcftools_call:
+    input:
+        fa="data/genome.fa",
+        bam=expand("sorted_reads/{sample}.bam", sample=config["samples"]),
+        bai=expand("sorted_reads/{sample}.bam.bai", sample=config["smaples])
+    output:
+        "calls/all.vcf"
+    shell:
+        "samtools mpileup -g -f {input.fa} {input.bam} | "
+        "bcftools call -mv - > {output}"
 ```
 
-- 字符串:
+虽然sample是一个字典，但是展开的时候，只会使用他们的key值部分。
 
-```java
-a = "world"
-print "hello" + a + "\n"
-println "hello $a \n"
+关于YAML格式的教程，见阮一峰的博客：<http://www.ruanyifeng.com/blog/2016/07/yaml.html>
+
+### 第三步：输入函数
+
+既然已经把文件路径都存入到配置文件中，那么可以进一步的改写之前的`bwa_map`里的输入部分。也就是从字典里面提取到存放的路径。最开始我就是打算这样写
+
+```Python
+rule bwa_map:
+    input:
+        "data/genome.fa",
+        config['samples']["{sample}"]
+    output:
+        "mapped_reads/{sample}.bam"
+    threads:8
+    shell:
+        "bwa mem -t {threads} {input} | samtools view -Sb - > {output}"
 ```
 
-列表中的字符串可以通过join方法连接。字符串支持多行，用三个引号
+毕竟"{sample}"从理论上应该得到sample的名字。但是`snakemake -np`显示出现错误
 
-- 闭包，简单的说就是一组能被当作参数传递给函数的代码.
-
-```java
-square = { it * it }
-[1,2,3,4].collect(square)
+```bash
+KeyError in line 11 of /home6/zgxu/snakemake-snakemake-tutorial-623791d7ec6d/Snakefile:
+'{sample}'
 ```
 
-由大括号`{}`包围的表达式会被脚本解释成代码。默认闭包接受一个参数，并将其赋值给变量`it`，可以在创建时自定义。
+这可能是`{sample}`的形式只能在匹配的时候使用，而在获取值的时候应该用基础第三步的`wildcards.sample`形式。于是继续改成`config["samples"][wildcards.sample]`。然而还是出现了错误。
 
-```java
-printMapClosure = { key, value ->
-    println "$key = $value"
-    }
-[ "Yue" : "Wu", "Mark" : "Williams", "sudha" : "Kumari" ].each(printMapClosure)
+```bash
+name 'wildcards' is not defined
 ```
 
-正则表达式
+为了理解错误的原因，并找到解决方法，我们需要理解Snakemake工作流程执行的一些原理，它执行分为三个阶段
 
-**文件读写**：操作之前需要创建文件系统对象（file system object)
+- 在**初始化**阶段，工作流程会被解析，所有规则都会被实例化
+- 在**DAG**阶段，也就是生成有向无环图，确定依赖关系的时候，所有的通配名部分都会被真正的文件名代替。
+- 在**调度**阶段，DAG的任务按照顺序执行
 
-```java
-myFile = file('some/path/to/my_file.file')
+也就是说在**初始化**阶段，我们是无法获知通配符所指代的具体文件名，必须要等到第二阶段，才会有`wildcards`变量出现。也就是说之前的出错的原因都是因为第一个阶段没通过。这个时候就需要**输入函数**推迟文件名的确定，可以用Python的匿名函数，也可以是普通的函数
+
+```Python
+rule bwa_map:
+    input:
+        "data/genome.fa",
+        lambda wildcards: config["samples"][wildcards.sample]
+    output:
+        "mapped_reads/{sample}.bam"
+    threads: 8
+    shell:
+        "bwa mem -t {threads} {input} | samtools view -Sb - > {output}"
 ```
 
-文件操作包括： 读取，创建目录，创建连接，拷贝文件，移动文件，重命名，删除，确认属性，
+### 第四步：规则参数
 
-## processes
+有些时候，shell命令不仅仅是由input和output中的文件组成，还需要一些静态的参数设置。如果把这些参数放在input里，则会因为找不到文件而出错，所以需要专门的`params`用来设置这些参数。
 
-process分为五个部分
-
-```java
-process < name > {
-
-   [ directives ]
-
-   input:
-    < process inputs >
-
-   output:
-    < process outputs >
-
-   when:
-    < condition >
-
-   [script|shell|exec]:
-   < user script to be executed >
-
-}
+```Python
+rule bwa_map:
+    input:
+        "data/genome.fa",
+        lambda wildcards: config["samples"][wildcards.sample]
+    output:
+        "mapped_reads/{sample}.bam"
+    threads: 8
+    params:
+        rg="@RG\tID:{sample}\tSM:{sample}"
+    shell:
+        "bwa mem -R '{params.rg}' '-t {threads} {input} | samtools view -Sb - > {output}"
 ```
 
-最重要的部分是脚本，nextflow默认以BASH脚本执行
+写在rule中的params的参数，可以在shell命令中或者是run里面的代码进行调用。
 
-## Channels
+### 第五步： 日志文件
 
-channel是一个连接两个process的非阻塞无向FIFO队列，有两个特性：
+当工作流程特别的大，每一步的输出日志都建议保存下来，而不是输出到屏幕，这样子出错的时候才能找到出错的所在。`snakemake`非常贴心的定义了`log`,用于记录日志。好处就在于出错的时候，在`log`里面定义的文件是不会被snakemake删掉，而output里面的文件则是会被删除。继续修改之前的`bwa_map`.
 
-1. 发出信息，异步操作，瞬间完成
-1. 接受数据，阻塞操作
-
-### Channels创建
-
-channel可以隐式由process输出创建，或者通过_channel factory_显式定义
-
-- create: 新建一个_channel_，`channelObj = Channel.create()`
-- value：新建仅有一个值（空也是一个值）的_channel_: `expl2 = Channel.value( 'Hello there' )`
-- from: 根据已有的值进行进行创建，`ch = Channel.from( 1, 3, 5, 7 )`
-- fromPath: 根据文件路径创建_channel_, `myFileChannel = Channel.fromPath( '/data/some/bigfile.txt',glob: 'true' )` 支持glob匹配，不检查文件是否为空，允许有如下参数
-
-参数名|参数描述
-----|----
-glob |   When true interprets characters *, ?, [] and {} as glob wildcards, otherwise handles them as normal characters (default: true)
-type|	Type of paths returned, either file, dir or any (default: file)
-hidden|	When true includes hidden files in the resulting paths (default: false)
-maxDepth|	Maximum number of directory levels to visit (default: no limit)
-followLinks|	When true it follows symbolic links during directories tree traversal, otherwise they are managed as files (default: true)
-relative|	When true returned paths are relative to the top-most common directory (default: false)
-
-- fromFilePairs: 创建配对reads的_channel_ `Channel.fromFilePairs('/my/data/SRR*_{1,2}.fastq')`
-
-参数名|参数描述
-----| ----
-type|	Type of paths returned, either file, dir or any (default: file)
-hidden|	When true includes hidden files in the resulting paths (default: false)
-maxDepth|	Maximum number of directory levels to visit (default: no limit)
-followLinks|	When true it follows symbolic links during directories tree traversal, otherwise they are managed as files (default: true)
-size|	Defines the number of files each emitted item is expected to hold (default: 2). Set to -1 for any.
-flat|	When true the matching files are produced as sole elements in the emitted tuples (default: false).
-
-- watchPath: 时刻检查文件路径是否出现特定文件或者特定文件发生改变。
-
-```java
-Channel
-   .watchPath( '/path/*.fa' )
-   .subscribe { println "Fasta file: $it" }
+```Python
+rule bwa_map:
+    input:
+        "data/genome.fa",
+        lambda wildcards: config["samples"][wildcards.sample]
+    output:
+        "mapped_reads/{sample}.bam"
+    params:
+        rg="@RG\tID:{sample}\tSM:{sample}"
+    log:
+        "logs/bwa_mem/{sample}.log"
+    threads: 8
+    shell:
+        "(bwa mem -R '{params.rg}' -t {threads} {input} | "
+        "samtools view -Sb - > {output}) 2> {log}"
 ```
 
-当路径下出现fa的时候输出"Fasta File: xxx.fa"信息。
+这里将标准错误重定向到了log中。
 
-### Channels赋值
+### 第六步：临时文件和受保护的文件
 
-Channel可以通过两种方式进行复制，一种是`bind()`方法，另一种则是`<<`操作符。
+由于高通量测序的数据量通常很大，因此很多无用的中间文件会占据大量的磁盘空间。而特异在执行结束后写一个shell命令清除不但写起来麻烦，而且也不好管理。Snakemake使用`temp()`来将一些文件标记成临时文件，在执行结束后自动删除。
 
-```java
-myChannle = Channel.create()
-# 方法1
-myChannel.bind( 'hello world' )
-# 方法2
-myChannel << 'hello world!'
+```Python
+rule bwa_map:
+    input:
+        "data/genome.fa",
+        lambda wildcards: config["samples"][wildcards.sample]
+    output:
+        temp("mapped_reads/{sample}.bam")
+    params:
+        rg="@RG\tID:{sample}\tSM:{sample}"
+    log:
+        "logs/bwa_mem/{sample}.log"
+    threads: 8
+    shell:
+        "(bwa mem -R '{params.rg}' -t {threads} {input} | "
+        "samtools view -Sb - > {output}) 2> {log}"
 ```
 
-### Channel事件监测
+修改之后的代码，当`samtools_sort`运行结束后就会把"mapped\_reads"下的BAM删掉。同时由于比对和排序都比较耗时，得到的结果要是不小心被误删就会浪费大量计算时间，最后的方法就是用`protected()`保护起来
 
-`subscribe()`使得每次从原始Channel输出的值都能以自定义的函数处理后的形式输出
-
-```java
-// 定义原始channel的值
-source = Channel.from ( 'alpha', 'beta', 'delta' )
-// 自定义函数输出
-source.subscribe {  println "Got: $it"  }
-// 或者类似管道形式
-Channel
-    .from( 'alpha', 'beta', 'lambda' )
-    .subscribe { String str ->
-        println "Got: ${str}; len: ${str.size()}"
-     }
+```Python
+rule samtools_sort:
+    input:
+        "mapped_reads/{sample}.bam"
+    output:
+        protected("sorted_reads/{sample}.bam")
+    shell:
+        "samtools sort -T sorted_reads/{wildcards.sample} "
+        "-O bam {input} > {output}"
 ```
 
-`subscribe()`还允许多个事件处理器，处理不同情形，`onNext`,`onComplete`,`onError`.
+最后，snakemake就会在文件系统中对该输出文件写保护，也就是最后的权限为`-r--r--r--`, 在删除的时候会问你`rm: remove write-protected regular file ‘A.bam’?`.
 
-### _Channel_中的数据处理：Operators
+### 进阶部分小结
 
-还能使用Operator转换channel传输中的数据：过滤，塑形，分割，结合，复制，数学操作和其他。数据操作部分在进阶会继续介绍，目前只要了解其他的几个函数：`set,`ifEmpty`,`print`,`println`,`view`,`close`.
+- 使用`threads:`定义不同规则所需线程数，有利于snakemake全局分配任务，最优化任务并行
+- 使用`configfile:`读取配置文件，将配置和流程分离
+- snakemake在**DAG**阶段才会知道通配的具体文件名，因此在input和output出现的`wildcards`就需要推迟到第二步。
+- 在`log`里定义的日志文件，不会因任务失败而被删除
+- 在`params`定义的参数，可以在shell和run中直接调用
+- `temp()`中的文件运行结束后会被删除，而`protected()`中的文件会有写保护，避免意外删除。
 
-- `set`： 将Channnel的值赋予其他Channel.
-- `ifEmpty`的参数值可以是闭包，在这种情况下，如果值为空则会输出闭包内结果。
-- `print`和`println`两者都会输出到console的标准输出，但是后者还会在每一个输出后进行换行。`view`默认情况下类似于`println`，当设置`newLine: false`时类似于于`print`。和前两者最大的不同在于，前两者把结果输出到标准输出后结束Channel,而view会返回一个跟之前一摸一样的Channel,因此能和其他连用。
-- 最后的`close`则是负责**关闭**Channel, 一般Channel会自动被Nextflow关闭，所以不太需要特别声明。
+此外，snakemake还支持benmark, 支持从其他snakefile里导入rule, 支持用conda完成自动化部署环境，支持集群任务投递，支持对通配进行限定等，这些可以继续通过看官方文档进一步学习.
 
-## 实例：开发出多样本SNP/InDel检测流程
+最后的代码如下
 
-核心思想：按照流程逐步开发，不断优化。
+```Python
+configfile: "config.yaml"
 
-基本框架为：数据预处理（去接头，去低质量碱基）-> 建立比对索引 -> 序列比对 -> BAM排序 -> （额外处理 ->) 标记重复 -> 第一轮HC检测变异 -> 基于第一轮结果的SNP，第二轮HC 检测变异
 
-### 配置参考基因组和FASTQ文件
+rule all:
+    input:
+        "report.html"
 
-问题1：如何读取单个和多个外部的文件？
 
-解决方法：nextflow的脚本语言种提供了`file`用于文件读取，并且允许通配符如`*,?[],{}`.关于通配符，见<https://docs.oracle.com/javase/tutorial/essential/io/fileOps.html#glob>
+rule bwa_map:
+    input:
+        "data/genome.fa",
+        lambda wildcards: config["samples"][wildcards.sample]
+    output:
+        temp("mapped_reads/{sample}.bam")
+    params:
+        rg="@RG\tID:{sample}\tSM:{sample}"
+    log:
+        "logs/bwa_mem/{sample}.log"
+    threads: 8
+    shell:
+        "(bwa mem -R '{params.rg}' -t {threads} {input} | "
+        "samtools view -Sb - > {output}) 2> {log}"
 
-```java
-params.genome = "$baseDir/../ref/Athalina.fa"
+
+rule samtools_sort:
+    input:
+        "mapped_reads/{sample}.bam"
+    output:
+        protected("sorted_reads/{sample}.bam")
+    shell:
+        "samtools sort -T sorted_reads/{wildcards.sample} "
+        "-O bam {input} > {output}"
+
+
+rule samtools_index:
+    input:
+        "sorted_reads/{sample}.bam"
+    output:
+        "sorted_reads/{sample}.bam.bai"
+    shell:
+        "samtools index {input}"
+
+
+rule bcftools_call:
+    input:
+        fa="data/genome.fa",
+        bam=expand("sorted_reads/{sample}.bam", sample=config["samples"]),
+        bai=expand("sorted_reads/{sample}.bam.bai", sample=config["samples"])
+    output:
+        "calls/all.vcf"
+    shell:
+        "samtools mpileup -g -f {input.fa} {input.bam} | "
+        "bcftools call -mv - > {output}"
+
+
+rule report:
+    input:
+        "calls/all.vcf"
+    output:
+        "report.html"
+    run:
+        from snakemake.utils import report
+        with open(input[0]) as vcf:
+            n_calls = sum(1 for l in vcf if not l.startswith("#"))
+
+        report("""
+        An example variant calling workflow
+        ===================================
+
+        Reads were mapped to the Yeast
+        reference genome and variants were called jointly with
+        SAMtools/BCFtools.
+
+        This resulted in {n_calls} variants (see Table T1_).
+        """, output[0], T1=input[0])
 ```
 
-结果会得到包含多个文件的列表。
+## 执行snakemake
 
-问题2：如何区分不同样本的PE输入？
+写完Snakefile之后就需要用`snakemake`执行。`snakemake`的选项非常多，这里列出一些比较常用的运行方式。
 
-解决方法：使用_Channel_的_fromFileParis_方法
+运行前检查潜在错误：
 
-```java
-params.reads = "$baseDir/../raw_data/*_{1,2}.{fq,fastq,fq.gz,fastq.gz}"
-Channel
-    .fromFilePairs( params.reads )
-    .ifEmpty { error "Unable to find any reads matching: ${params.reads}" }
-    .set { read_pairs }
+```bash
+snakemake -n
+snakemake -np
+snakemake -nr
+# --dryrun/-n: 不真正执行
+# --printshellcmds/-p: 输出要执行的shell命令
+# --reason/-r: 输出每条rule执行的原因
 ```
 
-最后输出新的_channel_，read_pairs，包含不同的组。
+直接运行:
 
-### 对参考基因组建立索引
-
-变异检测需要对参考基因组建立两类索引：BWA索引，GATK索引。前者用于比对，后者用在HC变异检测。
-
-要求：判断是否已经存在索引文件，如果存在则不创建。
-
-解决方案：使用条件语句判断是否存在索引，已存在索引时使用channel,不存在时用process进行创建。
-
-```java
-# 以GATK index 为例
-## 使用正则表达式构建fa_dict的文件名
-fa_dict = params.genome - ~/\.fa|fasta/ + '.dict'
-## 判断gatk dict是否存在，不存在时以process创建，存在时从channel中读取。
-if (!file(fa_dict).exists()){
-    println "building index from GATK HaplotypeCaller from ${params.genome} "
-    process buildGATKDict {
-        publishDir "$baseDir/../ref", mode: 'copy', overwrite: true
-
-        input:
-        file genome from genome_file
-
-        output:
-        file "${genome.baseName}.dict" into gatk_index
-
-        """
-        gatk-launch CreateSequenceDictionary -R $genome -O ${genome.baseName}.dict
-        """
-    }
-} else{
-    gatk_index = Channel.fromPath(fa_dict).view()
-}
+```bash
+snakemake
+snakemake -s Snakefile -j 4
+# -s/--snakefile 指定Snakefile，否则是当前目录下的Snakefile
+# --cores/--jobs/-j N: 指定并行数，如果不指定N，则使用当前最大可用的核心数
 ```
 
-从中学到的一些知识点：
+强制重新运行：
 
-- .ifEmpty的闭包无法使用process.
-- 不能存在同名的channel. 企图用channel和process构建同名输出channel得到的教训
-- 可以用正则表达式去掉字符串的部分内容`- ~//`
-- 外部条件语句可以控制Channel
-
-### 序列比对
-
-要求：线程和内存和分配，
-
-最终的代码为：
-
-```java
-params.genome = "$baseDir/../ref/Athalina.fa"
-params.reads = "$baseDir/../data/raw_data/*_{1,2}.{fq,fastq,fq.gz,fastq.gz}"
-
-if (! file(params.genome).exists){
-    exit 1, "${params.genome} is not exists"
-}
-
-
-
-Channel
-    .fromFilePairs( params.reads )
-    .ifEmpty { error "Unable to find any reads matching: ${params.reads}" }
-    .set { read_pairs }
+```bash
+snakemake -f
+# --forece/-f: 强制执行选定的目标，或是第一个规则，无论是否已经完成
+snakemake -F
+# --forceall/-F: 也是强制执行，同时该规则所依赖的规则都要重新执行
+snakemake -R some_rule
+# --forecerun/-R TARGET: 重新执行给定的规则或生成文件。当你修改规则的时候，使用该命令
 ```
+
+可视化：
+
+```bash
+snakemake --dag  | dot -Tsvg > dag.svg
+snakemake --dag  | dit -Tpdf > dag.pdf
+# --dag: 生成依赖的有向图
+snakemake --gui 0.0.0.0:2468
+# --gui: 通过网页查看运行状态
+```
+
+集群执行：
+
+```bash
+snakemake --cluster "qsub -V -cwd -q 投递队列" -j 10
+# --cluster /-c CMD: 集群运行指令
+## qusb -V -cwd -q， 表示输出当前环境变量(-V),在当前目录下运行(-cwd), 投递到指定的队列(-q), 如果不指定则使用任何可用队列
+# --local-cores N: 在每个集群中最多并行N核
+# --cluster-config/-u FILE: 集群配置文件
+```
+
+## 参考资料
+
+- [snakemake官方文档](http://snakemake.readthedocs.io/en/latest/)
+- [用snakemake写RNA-Seq流程](http://pedagogix-tagc.univ-mrs.fr/courses/ABD/practical/snakemake/snake_intro.html)
+- [阮一峰的YAML教程](http://www.ruanyifeng.com/blog/2016/07/yaml.html)
+- [阮一峰的Make命令教程](http://www.ruanyifeng.com/blog/2015/02/make.html)
