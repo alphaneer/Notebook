@@ -77,7 +77,7 @@ VCF(Variant Call Format)可以用来存放找到的变异信息，包括三个�
 
 这里的定义SV，指的是插入缺失大于20bp，小于12kb的情况，先随意感受下VCF是如何处理这种情况。
 
-![](http://oex750gzt.bkt.clouddn.com/18-1-23/5593924.jpg)
+![结构变异](http://oex750gzt.bkt.clouddn.com/18-1-23/5593924.jpg)
 
 即为了表示SV,需要专门定义INFO和FORMAT。根据定义就能对这6个变异进行解读
 
@@ -158,13 +158,117 @@ FILTER, QUAL, ID, POS, REF, ALT[0]
 - 基因型: "%GT", "%TGT"
 - 换行符和制表符:"\n","\t"
 
-举个例子：
+### 实际操作
+
+后续操作需要下载案例数据
 
 ```bash
-bcftools query -f '%CHROM\t%POS\t%REF\t%ALT\t%DP4{0}\t%DP{1}\t%DP{2}\t%DP{3}\n' calls.bcf -o call.delim
+curl -O http://data.biostarhandbook.com/variant/subset_hg19.vcf.gz
+curl -O http://data.biostarhandbook.com/variant/subset_hg19.vcf.gz.tbi
 ```
 
-输出结果就能直接导入到R,Python进行分析。
+从VCF中按照自定义格式提取数据
+
+```bash
+bcftools query -f '%CHROM %POS %REF %ALT \n' subset_hg19.vcf.gz | head -3
+# 结果
+19 400410 CA C
+19 400666 G C
+19 400742 C T
+```
+
+列出存放的所有样本
+
+```bash
+bcftools query -f subset_hg19.vcf.gz
+```
+
+从**指定区域**提取所有变异位点
+
+```bash
+bcftools query -f '19:400300-400800' -f '%CHROM\t%POS\t%REF%ALT\n' subset_hg19.vcf.gz | head -3
+19	400410	CAC
+19	400666	GC
+19	400742	CT
+```
+
+> 这里是按照特定格式提取，如果希望输出也是VCF文件，则用filter或view命令。
+
+从**指定区域**外提取所有变异
+
+```bash
+bcftools view -H -t ^'19:400300-400800' subset_hg19.vcf.gz | head -3
+# 结果如下
+19	400819	rs71335241	C	G	100	PASS	AC=0;AF=0.225839;AN=12;NS=2504;DP=10365;EAS_AF=0.2897;AMR_AF=0.2349;AFR_AF=0.2088;EUR_AF=0.161;SAS_AF=0.2434;AA=N|||;VT=SNP	GT	0|0	0|0	0|0	0|0	0|0	0|0
+19	400908	rs183189417	G	T	100	PASS	AC=1;AF=0.0632987;AN=12;NS=2504;DP=13162;EAS_AF=0.002;AMR_AF=0.1153;AFR_AF=0.0726;EUR_AF=0.0885;SAS_AF=0.0511;AA=-|||;VT=SNP	GT	0|0	0|0	0|0	0|0	0|0	0|1
+19	400926	rs28420134	C	T	100	PASS	AC=1;AF=0.0259585;AN=12;NS=2504;DP=13731;EAS_AF=0.005;AMR_AF=0.0879;AFR_AF=0.003;EUR_AF=0.0457;SAS_AF=0.0143;AA=C|||;VT=SNP	GT	0|0	0|0	0|0	0|0	0|1	0|0
+```
+
+根据样本中的基因型信息提取
+
+```bash
+# 通过表达式
+bcftools view -e 'GT="." | GT="0|0"' subset_hg19.vcf.gz | bcftools query -f '%POS[\t%GT\t]\n' | head -3
+402556	0|1		0|1		1|1		1|0		0|1		1|1
+402707	0|1		0|1		1|1		1|0		0|1		1|1
+402723	0|1		0|1		1|1		1|0		0|1		1|1
+# 或者是-g/--genotype
+## 选择至少有一个样本是杂合，且所有样本都不包含缺失位点信息
+bcftools view -g het subset_hg19.vcf.gz | bcftools view -g ^miss | bcftools query -f '%POS[\t%GT]\n' | head -3
+```
+
+仅提取INDEL, 可用`-v/--type`或`-i/--include`, 当然这两者有细微区别。
+
+```bash
+bcftools view -v indels subset_hg19.vcf.gz | bcftools query -f '%POS\t%TYPE\n' | wc -l
+bcftools view -i 'TYPE="indel"' subset_hg19.vcf.gz | bcftools query -f '%POS\t%TYPE\n' | wc -l
+```
+
+仅选择或不选择某几个样本
+
+```bash
+bcftools view -s HG00115,HG00118 subset_hg19.vcf.gz | bcftools query -H -f '%POS[\t%GT]\n' | head -n 4
+bcftools view -s ^HG00115,HG00118 subset_hg19.vcf.gz | bcftools query -H -f '%POS[\t%GT]\n' | head -n 4
+```
+
+选择等位基因大于或者低于一定值的变异，即比较AC(alternate alleles count)
+
+```bash
+# 大于5
+bcftools view  -c 5 subset_hg19.vcf.gz | bcftools query -f '%POS[\t%GT]\n' | head
+## 结果如下
+400666	1|0	0|1	0|1	0|0	0|0	1|1
+401818	0|1	0|1	1|1	1|0	0|0	1|1
+401907	0|1	0|1	1|0	1|0	0|0	0|1
+# 低于5
+bcftools view  -C 5 subset_hg19.vcf.gz | bcftools query -f '%POS[\t%GT]\n' | head -3
+## 结果如下
+400410	0|0	0|0	0|0	0|0	0|0	0|0
+400666	1|0	0|1	0|1	0|0	0|0	1|1
+400742	0|0	0|0	0|0	0|0	0|0	0|0
+```
+
+根据变异质量和覆盖深度选择
+
+```bash
+bcftools query -i 'QUAL>50 && DP>5000' -f '%POS\t%QUAL\t%DP\n' subset_hg19.vcf.gz | head -3
+400410	100	7773
+400666	100	8445
+400742	100	15699
+```
+
+对于多个VCF文件，则需要用到`merge`和`isec`。
+
+```bash
+# 合并列表中的样本
+bcftools merge -l samplelist > multi-sample.vcf
+# 提取在所有样本都出现的变异
+bcftools isec -p outdir -n=3 sample1.vcf.gz sample2.vcf.gz sample3.vcf.gz
+# 提取至少在两个样本出现的变异
+bcftools isec -p outdir -n+2 sample1.vcf.gz sample2.vcf.gz sample3.vcf.gz
+# 提取仅仅在一个样本中出现的变异
+bcftools isec -p outdir -C sample1.vcf.gz sample2.vcf.gz sample3.vcf.gz
+```
 
 ## VCFtools
 
@@ -227,3 +331,10 @@ vcftools [--vcf VCF文件 | --gzvcf gz压缩的VCF文件 --bcf BCF文件] [--out
 --max-missing: 基因型缺失
 --site-pi
 ```
+
+## 参考资料
+
+- VCF Poster: <http://vcftools.sourceforge.net/VCF-poster.pdf>
+- VCF short summary: <http://www.htslib.org/doc/vcf.html>
+- VCF Specification: <http://samtools.github.io/hts-specs/>
+- GATK论坛的VCF详细说明: <http://gatkforums.broadinstitute.org/gatk/discussion/1268/what-is-a-vcf-and-how-should-i-interpret-it>
