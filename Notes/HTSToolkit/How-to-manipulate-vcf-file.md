@@ -272,7 +272,7 @@ bcftools isec -p outdir -C sample1.vcf.gz sample2.vcf.gz sample3.vcf.gz
 
 ## Pysam
 
-pysam是基于htslib C-API的轻量级封装。尽管名字中只有sam，但其实能够操作BAM, SAM, VCF, BCF等格式。因此bcftools所能处理的东西，pysam都可以做到，并且还能使用python其他强大的库。pysam的VCF文件处理API如下
+pysam是基于htslib C-API的轻量级封装。尽管名字中只有sam，但其实能够操作BAM, SAM, VCF, BCF等格式。因此bcftools所能处理的东西，pysam都可以做到，并且还能使用python其他强大的库。pysam将负责htslib中负责VCF处理的API封装成Python的类，主要有
 
 - pysam.VariantFile: 负责读取文件
 - pysam.VariantHeader: 处理header部分
@@ -304,7 +304,7 @@ for rec in vcf_in.fetch(contig="19",start=400300,end=400800):
     print(str(rec.pos) + '\t' +  '\t'.join(GT))
 ```
 
-其他操作也是类型，主要是熟悉pysam的API。
+其他操作也是类似，主要是熟悉pysam的API。
 
 ## VCFtools
 
