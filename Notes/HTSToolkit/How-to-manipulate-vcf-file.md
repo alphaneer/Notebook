@@ -204,7 +204,7 @@ bcftools view -H -t ^'19:400300-400800' subset_hg19.vcf.gz | head -3
 19	400926	rs28420134	C	T	100	PASS	AC=1;AF=0.0259585;AN=12;NS=2504;DP=13731;EAS_AF=0.005;AMR_AF=0.0879;AFR_AF=0.003;EUR_AF=0.0457;SAS_AF=0.0143;AA=C|||;VT=SNP	GT	0|0	0|0	0|0	0|0	0|1	0|0
 ```
 
-根据样本中的基因型信息提取
+根据样本中的基因型信息提取数据
 
 ```bash
 # 通过表达式
@@ -269,6 +269,42 @@ bcftools isec -p outdir -n+2 sample1.vcf.gz sample2.vcf.gz sample3.vcf.gz
 # 提取仅仅在一个样本中出现的变异
 bcftools isec -p outdir -C sample1.vcf.gz sample2.vcf.gz sample3.vcf.gz
 ```
+
+## Pysam
+
+pysam是基于htslib C-API的轻量级封装。尽管名字中只有sam，但其实能够操作BAM, SAM, VCF, BCF等格式。因此bcftools所能处理的东西，pysam都可以做到，并且还能使用python其他强大的库。pysam的VCF文件处理API如下
+
+- pysam.VariantFile: 负责读取文件
+- pysam.VariantHeader: 处理header部分
+- pysam.VariantRecord： 处理记录部分
+- pysam.VariantHeaderRecord: VariantHeader对象中的头部记录
+
+用pysam从**指定区域**提取所有变异位点
+
+```Python
+import pysam
+bcf_in = pysam.VariantFile("subset_hg19.vcf.gz")
+# 形式一
+for rec in bcf_in.fetch(region="19:400300-400800"):
+    print(rec)
+# 形式二
+for rec in bcf_in.fetch(contig="19",start=400300,end=400800):
+    print(rec)
+```
+
+格式化输出,类似于query的效果。大部分VCF信息都会被解析成基本数据类型如字符串和浮点数，REF由于会存在多个值会被解析成元祖。header则为`pysam.VariantHeader`类，可以获取header部分信息。而FORMAT部分会是类似于字典结构的VariantReocrdSamples类。
+
+```Python
+import pysam
+bcf_in = pysam.VariantFile("subset_hg19.vcf.gz")
+for rec in vcf_in.fetch(contig="19",start=400300,end=400800):
+    GT = []
+    for sample in rec.samples.itervalues():
+        GT.append(str(sample.get("GT")))
+    print(str(rec.pos) + '\t' +  '\t'.join(GT))
+```
+
+其他操作也是类型，主要是熟悉pysam的API。
 
 ## VCFtools
 
@@ -338,3 +374,4 @@ vcftools [--vcf VCF文件 | --gzvcf gz压缩的VCF文件 --bcf BCF文件] [--out
 - VCF short summary: <http://www.htslib.org/doc/vcf.html>
 - VCF Specification: <http://samtools.github.io/hts-specs/>
 - GATK论坛的VCF详细说明: <http://gatkforums.broadinstitute.org/gatk/discussion/1268/what-is-a-vcf-and-how-should-i-interpret-it>
+- Pysam说明: <http://pysam.readthedocs.io/en/latest/usage.html#working-with-vcf-bcf-formatted-files>
