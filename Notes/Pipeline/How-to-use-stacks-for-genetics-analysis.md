@@ -1,7 +1,6 @@
 ---
 title: 使用stacks分析简化基因组
-author: xu zhougeng
-tags: pipeline
+tagS: pipeline
 notebook: 分析流程
 ---
 # 使用stacks分析简化基因组
@@ -12,7 +11,7 @@ notebook: 分析流程
 
 适用范围：
 
-- 酶切文库类型：ddRAD, GBS, ezRAD, quad-dRAD和Rapture。 但是stacks更适用于RAD-seq，GBS推荐TASSEL。如下是“Genome-wide genetic marker discovery and genotyping using next-generation sequencing”对几种常见的建库方法的总结
+- 酶切文库类型：ddRAD, GBS, ezRAD, quad-dRAD和Rapture。 但是stacks更适用于RAD-seq，GBS推荐TASSEL。如下是“Genome-wide genetic marker discovery and genotyping using next-generation sequencing”对几种常见的建库方法的总结
 
 ![几种文库的不同](http://oex750gzt.bkt.clouddn.com/18-2-15/6547083.jpg)
 
@@ -104,9 +103,9 @@ cs_1335.03	cs
 
 > 关barcode和样本的tsv中，样本的命名里不要包含空格，只能用字母，数字，".",“-”和"_", 而且有意义，最好包含原来群体名的缩写和样本编号。
 
-## 可视化评估测序数据
+## 可视化评估测序数据
 
-思考并记录下按照你的实验处理，你得到的read大概会是什么结构，从理论上讲，从左往右应该分别是：barcode，限制性酶切位点和后续的测序碱基。比如说案例应该现有6个碱基的barcode，SbfI限制性位点CCTGCAGG和其余的DNA序列，总计101bp
+思考并记录下按照你的实验处理，你得到的read大概会是什么结构，从理论上讲，从左往右应该分别是：barcode，限制性酶切位点和后续的测序碱基。比如说案例应该现有6个碱基的barcode，SbfI限制性位点CCTGCAGG和其余的DNA序列，总计101bp
 
 ```bash
 <6-nt barcode>TGCAGG<unique 89-nt sequence>
@@ -131,13 +130,13 @@ process_radtags -p $raw_dir -b $barcode_file \
     -c -q -r &> 01-clean-data/process_radtags.lane1.oe &
 ```
 
-解释下参数，虽然大部分已经很明了： `-p`为原始数据存放文件夹，`-b`为barcode和样本对应关系的文件，`-o`为输出文件夹， `-e`为建库所用的限制性内切酶，`--inline_null`表示barcode的位置在单端的read中，`-c`表示数据清洗时去除表示为N的碱基， `-q`表示数据清理时要去除低质量碱基 `-r`表示要抢救下barcode和RAD-tag。
+解释下参数，虽然大部分已经很明了： `-p`为原始数据存放文件夹，`-b`为barcode和样本对应关系的文件，`-o`为输出文件夹， `-e`为建库所用的限制性内切酶，`--inline_null`表示barcode的位置在单端的read中，`-c`表示数据清洗时去除表示为N的碱基， `-q`表示数据清理时要去除低质量碱基 `-r`表示要抢救下barcode和RAD-tag。
 
-> 这一步需要留意自己的单端测序，还是双端测序，barcode是在read中，还是在FASTQ的header中，是否还需要去接头序列，是否是双酶切建库等。
-> 另外这一步比较耗时，尽量脱机运行或者提交到计算节点中，不然突然断网导致运行终止就更浪费时间了。
+> 这一步需要留意自己的单端测序，还是双端测序，barcode是在read中，还是在FASTQ的header中，是否还需要去接头序列，是否是双酶切建库等。
+> 另外这一步比较耗时，尽量脱机运行或者提交到计算节点中，不然突然断网导致运行终止就更浪费时间了。
 > 将运行结果记录到日志文件中，方便后期检查报错。
 
-运行结束后，在`01-clean-data`下会有除了process\_radtags.lane1.oe外，还会有process\_radtags.lane1.log，前者记录每条lane的数据保留情况，后者记录每个样本的数据保留情况。可以将后者复制到Excel表格中，用柱状图等方法直观了解
+运行结束后，在`01-clean-data`下会有除了process\_radtags.lane1.oe外，还会有process\_radtags.lane1.log，前者记录每条lane的数据保留情况，后者记录每个样本的数据保留情况。可以将后者复制到Excel表格中，用柱状图等方法直观了解
 
 ![样本剩余read柱状图](http://oex750gzt.bkt.clouddn.com/18-2-16/96607112.jpg)
 
@@ -149,7 +148,7 @@ process_radtags -p $raw_dir -b $barcode_file \
 
 ## 第二步：获取样本变异数据
 
-这一步之后，分析流程就要根据是否有参考基因组分别进行分析。无参考基因组需要先有一步的 _de novo_ 组装，产生能用于比对的contig。有参考基因组则需要考虑基因组的质量，如果质量太差，则需要进一步以无参分析作为补充。
+这一步之后，分析流程就要根据是否有参考基因组分别进行分析。无参考基因组需要先有一步的 _de novo_ 组装，产生能用于比对的contig。有参考基因组则需要考虑基因组的质量，如果质量太差，则需要进一步以无参分析作为补充。
 
 参考基因组主要用于区分出假阳性的SNP，将snp与附近其他共线性的snp比较来找出离异值，这些离异值大多是因为建库过程所引入的误差，如PCR的链偏好性扩增。
 
@@ -395,13 +394,13 @@ done | sed "1i $header" > $full_table
 
 运行后得到`n_snps_per_locus.tsv`用于后续作图。会用到两个R脚本`plot_n_loci.R`和`plot_n_snps_per_locus.R`，代码见最后，结果图如下
 
-![r80位点数量](http://oex750gzt.bkt.clouddn.com/18-2-17/31620585.jpg)v
+![r80位点数量](http://oex750gzt.bkt.clouddn.com/18-2-17/31620585.jpg)v
 
 ![SNP分布](http://oex750gzt.bkt.clouddn.com/18-2-17/18197949.jpg)
 
 从上图可以发现M=4以后，折线就趋于稳定，并且每个座位上的SNP分布趋于稳定，因此选择M=4作为全样本数据集的运行参数。
 
-#### 全数据集 _de novo_ 分析
+#### 全数据集 _de novo_ 分析
 
 和之前基于参考基因组分析的代码类型，只不过将序列比对这一块换成了`ustacks`。尽管前面用来确定参数的脚本`denovo_map.pl`也能用来批量处理，但它不适合用于大群体分析。`ustacks`得到的结果仅能选择40～200个 **覆盖度高** 且 **遗传多样性**上有代表性的样本。 使用所有样本会带来计算上的压力，低频的等位基因位点也并非研究重点，并且会提高假阳性。综上，选择覆盖度比较高的40个样本就行了。
 
@@ -475,7 +474,7 @@ rule ref_based:
 # de novo data analysis
 ## The unique stacks program will take as input a set of short-read sequences
 ## and align them into exactly-matching stacks (or putative alleles).
-rule ustacks:
+rule ustacks:
     input: "01-clean-data/{sample}.fq.gz"
     threads: 8
     params:

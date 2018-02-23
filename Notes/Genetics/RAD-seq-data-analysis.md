@@ -1,45 +1,4 @@
----
-title: RAD-Seq data analysis
-date: 2017/10/23
-tags: RAD-Seq，Genetics
-categories: Genetics
-notebook: 分析流程
-comments: true
-output:
-  pdf_document:
-    toc: true
-    toc_depth: 2
-    highlight: tango
----
-
-<!-- @import "[TOC]" {cmd="toc" depthFrom=1 depthTo=6 orderedList=false} -->
-<!-- code_chunk_output -->
-
-* [RAD-Seq 数据分析](#rad-seq-数据分析)
-	* [实验流程](#实验流程)
-	* [分析需要考虑的问题](#分析需要考虑的问题)
-		* [序列比对和 _de novo_ 组装](#序列比对和-_de-novo_-组装)
-		* [Genotype估计](#genotype估计)
-	* [数据分析](#数据分析)
-		* [多倍体策略](#多倍体策略)
-		* [实例部分](#实例部分)
-
-<!-- /code_chunk_output -->
-
-# RAD-Seq 数据分析
-
-## 实验流程
-
-简单而言，分为如下几步：
-
-1. 基因组DNA用限制性内切酶裂解， 然后连接到P1接头。P1接头里含有正向扩增和Illumina测序引物位点，以及4~5 bp 的核酸barcode. barcode至少大于3 bp。
-1. 之后接头连接的片段(adapter-ligated fragments)混池，随机打断
-1. DNA随后连接到P2接头，反向扩增扩展引物无法连接P2. P2是一种Y型接头，包含P2反向扩增引物位点的反向互补序列，使得不含P1接头的片段无法扩增。
-1. 最后仅有同时含P1和P2接头的片段能够上机测序。
-
-实验流程建库过程如图所示：
-
-![](../../Pictures/Library_preparation_color.png)
+# RAD-seq数据分析方法
 
 ## 分析需要考虑的问题
 
@@ -114,5 +73,3 @@ E图： 一般复杂的网络都属于重复区，旁系同源和错误的tags�
 
 但是这个软件已经不再开发了，因为它只能找到1/4可能的SNP位点^[<https://groups.google.com/forum/#!topic/tassel/8x_T_nShs50>]. [TASSEL](https://groups.google.com/forum/#!forum/tassel)建议构建一个不太贵的pseduo reference用于比对，比如说HiSeq 2500 2x250 run.当然还有一个UNEAK替代流程，[GBS-SNP-CROP](
 https://github.com/halelab/GBS-SNP-CROP.git)值得一试。
-
-### 实例部分
