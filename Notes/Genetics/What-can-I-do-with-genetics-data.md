@@ -14,6 +14,8 @@
 
 ![核酸多样性](https://wikimedia.org/api/rest_v1/media/math/render/svg/be2956df9d2756a4f051f2516938d4831fcd3771)
 
+其中xi和xj表示第i和第j条DNA序列的频率，pai\_ij则是第i和第j条序列每个核苷酸位置上的差异。
+
 ## 检查群体结构
 
 ### Fst

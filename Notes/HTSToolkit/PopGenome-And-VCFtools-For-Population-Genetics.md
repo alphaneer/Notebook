@@ -5,7 +5,7 @@ notebook: 工具笔记
 ---
 # 群体遗传学分析
 
-上游分析流程得到的变异信息总需要进一步的数据挖掘才能找到有趣的故事，但是首先我们得知道可以用什么工具进行什么类型的分析。这篇主要介绍stacks/populations， PopGenome,VCFtools和plink这几个工具可以让我们从数据中挖掘哪些信息。
+， 上游分析流程得到的变异信息总需要进一步的数据挖掘才能找到有趣的故事，但是首先我们得知道可以用什么工具进行什么类型的分析。这篇主要介绍stacks/populationsPopGenome,VCFtools和plink这几个工具可以让我们从数据中挖掘哪些信息。
 
 ## stacks/populations
 
