@@ -34,12 +34,6 @@ notebook: 软件工具
 
 根据"GAGE: A critical evaluation of genome assemblies and assembly algorithms"以及自己的经验，目前二代数据比较常用的工具有Velvet, ABySS, AllPaths/AllPaths-LG, Discovar, SOAPdenovo, Minia, spades。这些工具里，ALLPaths-LG是公认比较优秀的组装工具，但消耗内存大，并且要提供至少两个不同大小文库的数据, SOAPdenovo是目前使用率最高的工具(华大组装了大量的动植物基因组)。工具之间的差别并没有想象的那么大，在物种A表现一般的工具可能在物种B里就非常好用，因此要多用几个工具，选择其中最好的结果。
 
-## 组装的基本流程
-
-在正式组装之前，需要先根据50X左右的illumina测序结果对基因组进行评估，了解基因组的大小，重复序列含量和复杂度。基于这些信息，确定后续策略以及是否真的需要对该物种进行测序。
-
-当你拿到测序数据后，就可以按照如下几步处理数据。第一步是**数据质控控制**，这一步对于组装而言非常重要，处理前和处理后的组装结果可能会天差地别；第二步，根据经验确定**起始参数**，如K-mer和覆盖率；第三步，使用不同软件进行组装；第四步，评估组装结果，如contig N50, scaffold N50, 判断是否需要修改参数重新组装。
-
 ## 数据准备
 
 这里使用来自于[GAGE](http://gage.cbcb.umd.edu/data/index.html)的金黄色葡萄球菌 _Staphylococcus aureusa_ 数据进行练习。一方面数据量小，服务器能承受并且跑得快，另一方面本身基因组就组装的不错，等于是考完试能够自己对答案。
@@ -54,6 +48,33 @@ curl http://gage.cbcb.umd.edu/data/Staphylococcus_aureus/Data.original/frag_2.fa
 curl http://gage.cbcb.umd.edu/data/Staphylococcus_aureus/Data.original/shortjump_1.fastq.gz > raw-data/lib2/shortjump_1.fastq.gz
 curl http://gage.cbcb.umd.edu/data/Staphylococcus_aureus/Data.original/shortjump_1.fastq.gz > raw-data/lib2/shortjump_1.fastq.gz
 ```
+
+## 基因组survey
+
+在正式组装之前，需要先根据50X左右的illumina测序结果对基因组进行评估，了解基因组的大小，重复序列含量和复杂度。基于这些信息，确定后续策略以及是否真的需要对该物种进行测序。
+
+基因组survery的基础都是计算k-mer频率。
+
+此外推荐两个现成工具，一个是ALLPATHS-LG/FindErrors，它不但能够修正低质量的短读，还能初步评估基因组，另一个是GCE(genome characteristics Estimation)，由华大基因开发出来的一款基因组评估工具。
+
+**安装**：ALLPATHS-LG的安装要求GCC的版本大于4.7和GMP库(安装GCC同时会安装GMP)。GCE则是下载解压就可以用
+
+```bash
+#FindErrors
+wget ftp://ftp.broadinstitute.org/pub/crd/ALLPATHS/Release-LG/latest_source_code/allpathslg-52488.tar.gz
+tar xf allpathslg-52488.tar.gz
+cd allpathslg-52488
+./configure --prefix=$HOME/biosoft/allpathslg && make && make install
+# GCE
+wget ftp://ftp.genomics.org.cn/pub/gce/gce-1.0.0.tar.gz
+tar xf gce-1.0.0.tar.gz  -C ~/biosoft
+```
+
+> 小问题：我用GCC7.2通过了configure，但是make这一步却各种出错，但是GCC4.8却没有问题，也不知道是什么原因，可能版本未必越高越高。
+
+## 基因组正式组装
+
+当你拿到测序数据后，就可以按照如下几步处理数据。第一步是**数据质控控制**，这一步对于组装而言非常重要，处理前和处理后的组装结果可能会天差地别；第二步，根据经验确定**起始参数**，如K-mer和覆盖率；第三步，使用不同软件进行组装；第四步，评估组装结果，如contig N50, scaffold N50, 判断是否需要修改参数重新组装。
 
 **双链特性**：forward sequence of a read may overlap either the forward sequence or the reverse complement sequence of other reads
 **回文序列**：k-mers长度为奇数
