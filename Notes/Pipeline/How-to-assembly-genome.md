@@ -48,7 +48,14 @@ de bruijn图由两部分组成，节点(Nodes)和边(Edges)，节点由k-mers组
 
 ![几种比较复杂的图](http://oex750gzt.bkt.clouddn.com/18-3-1/92185065.jpg)
 
-组装软件的任务就是从k-mers形成的图按照一定的算法组装出可能的序列，根据"GAGE: A critical evaluation of genome assemblies and assembly algorithms"以及自己的经验，目前二代数据比较常用的工具有Velvet, ABySS, AllPaths/AllPaths-LG, Discovar, SOAPdenovo, Minia, spades。这些工具里，ALLPaths-LG是公认比较优秀的组装工具，但消耗内存大，并且要提供至少两个不同大小文库的数据, SOAPdenovo是目前使用率最高的工具(华大组装了大量的动植物基因组)。工具之间的差别并没有想象的那么大，在物种A表现一般的工具可能在物种B里就非常好用，因此要多用几个工具，选择其中最好的结果。
+组装软件的任务就是从k-mers形成的图按照一定的算法组装出可能的序列，根据"GAGE: A critical evaluation of genome assemblies and assembly algorithms"以及自己的经验，目前二代数据比较常用的工具有Velvet, ABySS, AllPaths/AllPaths-LG, Discovar, SOAPdenovo, Minia, spades,[Genomic Assemblers](https://bioinformatictools.wordpress.com/tag/newbler/)这篇文章有比较好的总结，
+
+- ALLPaths-LG是公认比较优秀的组装工具，但消耗内存大，并且要提供至少两个不同大小文库的数据
+- SPAdes是小基因组(<100Mb)组装时的首选
+- SOAPdenovo是目前使用率最高的工具(华大组装了大量的动植物基因组)，效率也挺好，就是错误率也高
+- Minia是内存资源最省的工具，组装人类基因组contig居然只要5.7G的RAM，运行23小时，简直难以相信。
+
+当然工具之间的差别并没有想象的那么大，也没有想象中那么小，可能在物种A表现一般的工具可能在物种B里就非常好用，因此要多用几个工具，选择其中最好的结果。
 
 ## 数据准备
 
@@ -140,7 +147,9 @@ mkdir -p clean-data{lib1,lib2}
 ~/opt/biosoft/fastp/fastp -i raw-data/lib1/frag_1.fastq.gz -I raw-data/lib1/frag_2.fastq.gz -o clean-data/lib1/frag_1.fastq.gz -O clean-data/lib1/frag_2.fastq.gz
 ```
 
-效果非常的惊人，直接干掉了90%的reads，从原来的1,294,104条变成77,375，一度让我怀疑软件是否出现了问题，直到我用同样的代码处理现在Illumina的测序结果以及看了FastQC的结果才打消了我的疑虑，没错，以前的数据质量就是那么差。因此，这里就不执行这一步，而是使用**BFC**对测序质量进行纠正。
+效果非常的惊人，直接干掉了90%的reads，从原来的1,294,104条变成77,375，一度让我怀疑软件是否出现了问题，直到我用同样的代码处理现在Illumina的测序结果以及看了FastQC的结果才打消了我的疑虑，没错，以前的数据质量就是那么差。**注**，除非是去接头，否则不建议通过删除序列的方式提高质量。
+
+质控另一个策略是对短读中一些可能的错误碱基进行纠正，测序错误会引入大量无意义的K-mers，从而增加运算复杂度。此处使用**BFC**对测序质量：
 
 ```bash
 ~/opt/biosoft/bfc/bfc -s 3m -t 16 raw-data/lib1/frag_1.fastq.gz | gzip -1 > clean-data/lib1/corrected_1.fq.gz
@@ -149,15 +158,33 @@ mkdir -p clean-data{lib1,lib2}
 
 ![处理前后](http://oex750gzt.bkt.clouddn.com/18-3-7/91102371.jpg)
 
-数据纠正后其实也不会有质的提高。目前的数据量大大提高，并且质量也提高的情况下，更推荐用`fastq`直接丢掉不靠谱的数据，毕竟纠错可能会引入来新的错误。
+总之，质控的目标是在不引入的错误的情况下尽量提高整体质量，这一步对后续的组装影响很大，所以尽量做这一步，除非组装软件要求你别做，那你就不要手贱了。
 
 ### 使用不同工具和参数进行组装
 
-二代组装可供选择的工具很多, 但是主流其实就那么几个, 算法都基于k-mers和德布鲁因图, 所以组装的时候选择3~5个工具运行比较结果即可，比如说IDBA-UD, SOAPdenovo2, Abyss, velvet和Spades。
+二代组装可供选择的工具很多, 但是主流其实就那么几个, 所以组装的时候选择3~5个工具运行比较结果即可，比如说MaSuRCA
+, IDBA-UD, SOAPdenovo2, Abyss, velvet和Spades。当然一旦你选择一个软件准备运行的时候，你就会遇到参数选择问题，比如怎么确定k-mers，组装软件最基础也是最核心的参数。这里有几条原则值得借鉴：
 
-IDBA有一系列的工具, IDBA是基础版，IDBA-UD适用于宏基因组和单细胞测序的数据组装，IDBA-Hybrid则是基于相似的基因组提高组装结果，IDBA-Tran是专门处理转录组数据。对于无参考基因组组装，作者推荐使用IDBA-UD。
+- k要大于log4(基因组大小)，如果数学不好，无脑选择20以上
+- 尽量减少测序错误形成的k-mers, 因为这是无意义的噪音, 也就是要求k不能过大
+- 当然k也不能太小，否则会导致重复压缩,比如说ATATATA，在2kmers的情况下，就只有AT了
+- 测序深度越高，K值也就可以选择的越大
 
-IDBA-UD工具要求将两个配对的短读文件合并成一个，所以先用它提供的fq2fa先转换格式
+但是说了那么多，你依旧不知道应该选择什么样的K，如果你的计算资源无限，那么穷举法最简单粗暴。如果穷举法不行，那么建议先用k=21, 55,77 组装一下contig, 对不同参数的contig N50有一个大致的了解，然后继续调整。此外还有一个工具叫做`KmerGenie`可以预测一个初始值。总之，让我们先运行第一个工具--SPAdes，可通过bioconda安装。
+
+**SPAdes**全称是圣彼得堡基因组组装工具，包含了一系列组装工具处理不同的项目，如高杂合度的dipSPAdes，宏基因组的metaSPAdes。[官方文档](http://spades.bioinf.spbau.ru/release3.10.1/manual.html)中以大肠杆菌为例运行整个流程，花了将近1个小时。我们的数据集比较小，速度会更快
+
+```bash
+# 项目根文件夹下
+mkdir assembly/spades
+spades.py --pe1-1 raw-data/lib1/frag_1.fastq.gz --pe1-2 raw-data/lib1/frag_2.fastq.gz --mp1-1 raw-data/lib2/shortjump_1.fastq.gz --mp1-2 raw-data/lib2/shortjump_2.fastq.gz -o assembly/spades/
+```
+
+你会发现之前说的k-mers在这里根本没出现，而且用的也是原始数据，这是因为`spades.py`有一个组件`BayesHammer`处理测序错误，并且它是多K类组装工具(multi-k assembly), 也就是说它会自动选择不同的K运行，从而挑选比较合适的k值，当然你还可以自己设置，比如说`-k 21,55,77`。最后结果为纠正后的短读数据，组装后的contig, 组装后的scaffold, 不同格式的组装graph。
+
+同样运行多k-mers运行后比较的工具还有IDBA，它也有一系列的工具。IDBA是基础版，IDBA-UD适用于宏基因组和单细胞测序的数据组装，IDBA-Hybrid则是基于相似的基因组提高组装结果，IDBA-Tran是专门处理转录组数据。对于无参考基因组组装，作者推荐使用IDBA-UD。
+
+**IDBA-UD**工具要求将两个配对的短读文件合并成一个，我们的原始数据需要先用它提供的fq2fa先转换格式
 
 ```bash
 # 项目文件夹下
@@ -166,26 +193,101 @@ mkdir -p assembly/idba_ud
 ~/opt/biosoft/idba/bin/fq2fa --merge <(zcat clean-data/lib2/corrected_1.fq.gz) <(zcat clean-data/lib2/corrected_2.fq.gz) assembly/idba_ud/lib2.fa
 ```
 
-`idba_ud`运行时调整的参数为文库相关参数(如-r,-l), k-mers相关参数(如--mink,--maxk,--step等)以及我目前看不懂的参数(如--no\_bubble,--no\_local)等
+`idba_ud`和k-mers相关参数为--mink,--maxk,--step, 通过`--read_level_x` 传入不同大小的文库，也提供了短读纠正的相关参数`--no_correct,--pre_correction`
 
 ```bash
 ~/opt/biosoft/idba/bin/idba_ud -r assembly/idba_ud/lib1.fa --read_level_2 assembly/idba_ud/lib2.fa -o assembly/idba_ud/ --mink 19 --step 10
 ```
 
-最后在`assembly/idba_ud`下会生成一系列的文件，其中结果文件为`scaffold*.fa`，
+运行结束后在`assembly/idba_ud`下会生成一系列的文件，其中结果文件为`contig.fa`和`scaffold.fa`。
 
-Abyss
+最后介绍一个要手动运行不同k-mers的工具，如ABySS, 它有一个亮点，就是能够可以使用多个计算节点。我们使用k=31进行组装
 
 ```bash
-~/opt/biosoft/abyss-2.0.2/bin/abyss-pe k=63 name='sa' lib='lib1 lib2' lib1='clean-data/lib1/corrected_1.fq.gz clean-data/lib1/corrected_2.fq.gz' &
+mkdir -p assembly/abyss
+# 增加 /1,/2
+sed 's/^@SRR.*/&\/1/' <(zcat raw-data/lib2/shortjump_1.fastq.gz) | gzip > raw-data/lib2/s1.fq.gz
+sed 's/^@SRR.*/&\/2/' <(zcat raw-data/lib2/shortjump_2.fastq.gz) | gzip > raw-data/lib2/s2.fq.gz
+~/opt/biosoft/abyss-2.0.2/bin/abyss-pe -C assembly/abyss k=31 n=5 name=asm lib='frag short' frag='../../raw-data/lib1/frag_1.fastq.gz ../../raw-data/lib1/frag_2.fastq.gz' short='../../raw-data/lib2/s1.fq.gz ../../raw-data/lib2/s2.fq.gz' aligner=bowtie
 ```
 
-**双链特性**：forward sequence of a read may overlap either the forward sequence or the reverse complement sequence of other reads
-**回文序列**：k-mers长度为奇数
-**测序错误**：  数据预处理， graph edges which represent  a higher number of K-mers are more highly trusted, sequence alignment algorithms are used to collapse highly similar paths
-**重复**：inverted repeats, tandem repeats, inexact repeats, and nested repeats， 增加k-mer长度，或mate-pair 测序
+> 注意，首先ABYSS要求双端测序的reads命名要以/1和/2结尾，其次第二个文库才37bp, 所以比对软件要选择bowtie,否则你运行一定会遇到`histogram xxx.hist is empty`的报错。当然到最后，这个问题我都没有解决掉，所以我放弃了。
 
-_de novo_ 组装 -> 基因组补洞 -> 基因组scaffold连接
+虽然看起来**abyss**用起来很简单，但其实背后的工作流程还是比较复杂，如下是它的流程示意图
+
+![flowchart](http://oex750gzt.bkt.clouddn.com/18-3-8/43653897.jpg)
+
+小结一下，这里用到了spades, idba,abyss三种工具对同一种物种进行组装，得到对应的contig结果，重点在于k-mers的选择。contig是组装的第一步，也是非常重要的一步，为了保证后续搭scaffold和基因组补洞等工作的顺利，我们先得挑选一个比较高质量的contig。
+
+### 组装评估
+
+理想条件下，我们希望一个物种有多少染色体，结果最好就只有多少个contig。当然对于二代测序而言，这绝对属于妄想，只希望得到的contig文件中，每个contig都能足够的长，能够有一个完整的基因结构，归纳一下就是3C原则:
+
+- 连续性(Contiguity): 得到的contig要足够的长
+- 正确性(Correctness): 组装的contig错误率要低
+- 完整性(Completeness)：尽可能包含整个原始序列
+
+这三条原则也比较定性，我们需要更加定量的数值衡量，比如说contig数, 组装的总长度等, N50等。问题来了，什么叫做N50呢，
+
+> 小故事，当初我刚学生信的时候，老板给我一个项目，让我继续组装一个初步组装的contigs。我刚入门啥都不懂，于是就去请教一个师兄，他当时问我你的基因组N50是多少呀？我一脸懵逼，茫然四顾，后来他又问了我几个问题，给了我几个小建议，这些我都已经忘记了，唯独记得N50。后来，老板让我单独去请教帮我们初步组装的那个人，当然他还找了一个会议记录，我还是啥都不懂，场面很尴尬，我最后做的事情就是把原始数据拷到硬盘里，那个数据拷贝后，我就没有碰过。再后来，还是这个物种，老板带着我和师姐一起去找他们讨论。这下稍微好一点，当然不是因为我懂得多了，是因为老板和他们聊八卦比较开心。那么多年过去了，很多人和事都已经随风而去，但是N50却一致挥之不去。
+
+N50定义比较绕口，有一种只可意会不可言传的感觉，所以索性看图
+
+![N50和NG50](http://oex750gzt.bkt.clouddn.com/18-3-8/83625326.jpg)
+
+假设一个基因组的大小为10，但是这个值只有神知道，你得到的信息就是组装后有3个contig,长度分别为"3,4,1,1"，所以组装总长度为9。为了计算N50，我们需要先把contig从大到小排列，也就是"4,3,1"。然后先看最大的contig，长度是4，他的长度是不是超过组装总大小的一半了吗？如果是，那么N50=4, 4 < 4.5, 不是。 那么在此基础上加上第二长的contig,也就是4+3=7, 是不是超过一半了？7>4.5, 那么N50=3. 因此，N50的定义可以表述为"使得累加后长度超过组装总长度一半的contig的长度就是N50"。为了方便管理和使用软件，建议建立如下几个文件夹
+
+N50是基于一个未知的基因组得到得结果，如果基因组测序比较完整，那么就可以计算NG50，也就是"使得累加后长度超过基因组总长度一半的contig的长度就是NG50"。NA50比较稍微复杂，需要将组装结果进一步比对到参考基因组上，以contig实际和基因组匹配的长度进行排序计算。
+
+说完N50，我们介绍两款工具，QUAST和BUSCO。
+
+**QUAST**使用质量标准(quality metrics)来评估不同组装工具和不同参数的组装效果，无论是否有基因组都可以使用。我们分别以有参和无参两种模式比较`Minia`,`IDBA`和`SPAdes`三个组装的运行结果
+
+```bash
+# without reference
+quast.py -o compare idba_ud/contig.fa minia/minia.contigs.fa spades/contigs.fasta
+# with reference
+quast.py -R ../genome/Saureus.fna -o compare idba_ud/contig.fa minia/minia.contigs.fa spades/contigs.fasta
+```
+
+![quast运行结果](http://oex750gzt.bkt.clouddn.com/18-3-8/47341406.jpg)
+
+这个结果非常直观的告诉我们一个事实就是`spades`组装的contigs`各方面表现都很优秀，minia由于内存使用率最低，所以组装效果一般也是可以理解。
+
+**BUSCO**通过同源基因数据库从基因完整度来评价基因组组装结果。BUSCO首先构建了不同物种的最小基因集，然后使用HMMER，BLAST,Augustus等工具分析组装结果中的同源基因，从而定量评估组装是否完整。
+
+```bash
+busco -i assembly/spades/contigs.fasta -o result -l /home/wangjw/db/busco/bacteria_odb9 -m genome -f
+```
+
+运行结果会在当前目录下的`run_result`生成一些列文件，其中的`short_summary_result.txt`内容如下
+
+```bash
+# Summarized benchmarking in BUSCO notation for file assembly/spades/contigs.fasta
+# BUSCO was run in mode: genome
+
+	C:98.6%[S:98.6%,D:0.0%],F:0.0%,M:1.4%,n:148
+
+	146	Complete BUSCOs (C)
+	146	Complete and single-copy BUSCOs (S)
+	0	Complete and duplicated BUSCOs (D)
+	0	Fragmented BUSCOs (F)
+	2	Missing BUSCOs (M)
+```
+
+C值表示和BUSCO集相比的完整度，M值表示可能缺少的基因数，D则是重复数。正所谓没有比较，就没有伤害，我们拿之前QUAST对比中表现比较差的minia结果作为对比。
+
+```bash
+	C:85.1%[S:85.1%,D:0.0%],F:2.7%,M:12.2%,n:148
+
+	126	Complete BUSCOs (C)
+	126	Complete and single-copy BUSCOs (S)
+	0	Complete and duplicated BUSCOs (D)
+	4	Fragmented BUSCOs (F)
+	18	Missing BUSCOs (M)
+```
+
+98% vs 85%, 一下子对比就出来了。综上，从两个维度上证明的SPAdes不但组装效果好，而且基因完整度也高，当然它的内存消耗也是很严重。这都是取舍的过程。
 
 ## 附录:软件安装
 
@@ -262,6 +364,8 @@ wget ftp://ftp.genomics.org.cn/pub/gce/gce-1.0.0.tar.gz
 tar xf gce-1.0.0.tar.gz  -C ~/opt/biosoft
 ```
 
+组装软件种类很多，对于小基因组(<100Mb)而言**SPAdes**是很好的选择， 但是对于大基因组就得多试试几个，比如说MaSuRCA, Discover de novo, Abyss,SOAPdenovo2, IDBA。内存不太够的话可以尝试Minia。
+
 **组装软件一**：ABySS的安装依赖boost1.62, OpenMPI, Google/sparsehash, SQLite，且GCC支持OpenMP，因此也就是一个个下载，一个个安装的过程。
 
 ```bash
@@ -323,6 +427,17 @@ cd ~/src
 git clone https://github.com/loneknightpy/idba.git
 idba/build.sh
 mv idba ~/opt/biosoft/
+```
+
+**组装软件四**：MaSuRCA，能够纯用二代，也能二代三代测序混合使用，先用 de bruijn 图构建长reads，然后再用OLC算法进行组装
+
+```bash
+cd src
+wget ftp://ftp.genome.umd.edu/pub/MaSuRCA/latest/MaSuRCA-3.2.4.tar.gz
+tar xf MaSuRCA-3.2.4.tar.gz
+cd MaSuRCA-3.2.4
+export DEST=$HOME/opt/biosoft/MasuRCA
+./install.sh
 ```
 
 **质控软件一**: 原本是要推荐BLESS2,但是这个软件在编译完成后出现各种核心转移的毛病，和我的系统相性太差，于是改用Li Heng的BFC
