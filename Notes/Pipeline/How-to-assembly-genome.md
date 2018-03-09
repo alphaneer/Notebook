@@ -1,7 +1,7 @@
 ---
 title: 纯二代测序从头组装动植物基因组
 tags: 组装, Bioinformatics
-notebook: 软件工具
+notebook: 分析流程
 ---
 # 基因组组装
 
@@ -219,15 +219,19 @@ sed 's/^@SRR.*/&\/2/' <(zcat raw-data/lib2/shortjump_2.fastq.gz) | gzip > raw-da
 
 小结一下，这里用到了spades, idba,abyss三种工具对同一种物种进行组装，得到对应的contig结果，重点在于k-mers的选择。contig是组装的第一步，也是非常重要的一步，为了保证后续搭scaffold和基因组补洞等工作的顺利，我们先得挑选一个比较高质量的contig。
 
-### 组装评估
+### 组装可视化和评估
 
-理想条件下，我们希望一个物种有多少染色体，结果最好就只有多少个contig。当然对于二代测序而言，这绝对属于妄想，只希望得到的contig文件中，每个contig都能足够的长，能够有一个完整的基因结构，归纳一下就是3C原则:
+理想条件下，我们希望一个物种有多少染色体，结果最好就只有多少个contig。当然对于二代测序而言，这绝对属于妄想，可以通过一款graph可视化工具bandage来感受一下最初得到的contig graph是多么复杂。
+
+![Bandage](http://oex750gzt.bkt.clouddn.com/18-3-9/97612070.jpg)
+
+一般看这图直观感受就是怎么那么多节，这些节就是造成contig不连续的元凶。不同组装工具在构建de bruijn graph的差异不会那么大，contig的数量和大小和不同工具如何处理复杂节点有关。我们希望得到的contig文件中，每个contig都能足够的长，能够有一个完整的基因结构，归纳一下就是3C原则:
 
 - 连续性(Contiguity): 得到的contig要足够的长
 - 正确性(Correctness): 组装的contig错误率要低
 - 完整性(Completeness)：尽可能包含整个原始序列
 
-这三条原则也比较定性，我们需要更加定量的数值衡量，比如说contig数, 组装的总长度等, N50等。问题来了，什么叫做N50呢，
+但是这三条原则其实是相互矛盾的，连续性越高，就意味着要处理更多的模糊节点，会导致整体错误率上升，为了保证完全的正确，那么就会导致contig非常的零碎。此外，这三条原则也比较定性，我们需要更加定量的数值衡量，比如说contig数, 组装的总长度等, N50等。问题来了，什么叫做N50呢，
 
 > 小故事，当初我刚学生信的时候，老板给我一个项目，让我继续组装一个初步组装的contigs。我刚入门啥都不懂，于是就去请教一个师兄，他当时问我你的基因组N50是多少呀？我一脸懵逼，茫然四顾，后来他又问了我几个问题，给了我几个小建议，这些我都已经忘记了，唯独记得N50。后来，老板让我单独去请教帮我们初步组装的那个人，当然他还找了一个会议记录，我还是啥都不懂，场面很尴尬，我最后做的事情就是把原始数据拷到硬盘里，那个数据拷贝后，我就没有碰过。再后来，还是这个物种，老板带着我和师姐一起去找他们讨论。这下稍微好一点，当然不是因为我懂得多了，是因为老板和他们聊八卦比较开心。那么多年过去了，很多人和事都已经随风而去，但是N50却一致挥之不去。
 
@@ -289,7 +293,14 @@ C值表示和BUSCO集相比的完整度，M值表示可能缺少的基因数，D
 
 98% vs 85%, 一下子对比就出来了。综上，从两个维度上证明的SPAdes不但组装效果好，而且基因完整度也高，当然它的内存消耗也是很严重。这都是取舍的过程。
 
-## 附录:软件安装
+## 附录
+
+### 参考资料
+
+- Bandage: <https://github.com/rrwick/Bandage/wiki>
+- QUAST: <http://quast.bioinf.spbau.ru/manual.html>
+
+### 软件安装
 
 由于不同软件对不同的基因组的适合度不同，一般都需要参数多个工具的不同参数，根据N50和BUSCO等衡量标准选择比较好的结果。为了避免后续花篇幅在工具安装上，因此先准备后续的分析环境。对于组装而言，我们需要安装如下工具:
 
@@ -475,56 +486,14 @@ source activate assembly
 conda install busco
 ```
 
-此外运行还需要不同物种的基因数据集
+尽管conda安装了busco，但是离实际运行还需要添加几个环境变量和不同物种的基因数据集，请使用`printenv`确保如下如下几个路径都已经添加到环境变量中。
 
 ```bash
-mkdir -p ~/db/busco
-cd ~/db/busco
-# 保存如下内容到download.sh中,然后使用bash download.sh批量下载
-# Bacteria
-wget http://busco.ezlab.org/v2/datasets/bacteria_odb9.tar.gz
-wget http://busco.ezlab.org/v2/datasets/proteobacteria_odb9.tar.gz
-wget http://busco.ezlab.org/v2/datasets/rhizobiales_odb9.tar.gz
-wget http://busco.ezlab.org/v2/datasets/betaproteobacteria_odb9.tar.gz
-wget http://busco.ezlab.org/v2/datasets/gammaproteobacteria_odb9.tar.gz
-wget http://busco.ezlab.org/v2/datasets/enterobacteriales_odb9.tar.gz
-wget http://busco.ezlab.org/v2/datasets/deltaepsilonsub_odb9.tar.gz
-wget http://busco.ezlab.org/v2/datasets/actinobacteria_odb9.tar.gz
-wget http://busco.ezlab.org/v2/datasets/cyanobacteria_odb9.tar.gz
-wget http://busco.ezlab.org/v2/datasets/firmicutes_odb9.tar.gz
-wget http://busco.ezlab.org/v2/datasets/clostridia_odb9.tar.gz
-wget http://busco.ezlab.org/v2/datasets/lactobacillales_odb9.tar.gz
-wget http://busco.ezlab.org/v2/datasets/bacillales_odb9.tar.gz
-wget http://busco.ezlab.org/v2/datasets/bacteroidetes_odb9.tar.gz
-wget http://busco.ezlab.org/v2/datasets/spirochaetes_odb9.tar.gz
-wget http://busco.ezlab.org/v2/datasets/tenericutes_odb9.tar.gz
-# Eukaryota
-wget http://busco.ezlab.org/v2/datasets/eukaryota_odb9.tar.gz
-wget http://busco.ezlab.org/v2/datasets/fungi_odb9.tar.gz
-wget http://busco.ezlab.org/v2/datasets/microsporidia_odb9.tar.gz
-wget http://busco.ezlab.org/v2/datasets/dikarya_odb9.tar.gz
-wget http://busco.ezlab.org/v2/datasets/ascomycota_odb9.tar.gz
-wget http://busco.ezlab.org/v2/datasets/pezizomycotina_odb9.tar.gz
-wget http://busco.ezlab.org/v2/datasets/eurotiomycetes_odb9.tar.gz
-wget http://busco.ezlab.org/v2/datasets/sordariomyceta_odb9.tar.gz
-wget http://busco.ezlab.org/v2/datasets/saccharomyceta_odb9.tar.gz
-wget http://busco.ezlab.org/v2/datasets/saccharomycetales_odb9.tar.gz
-wget http://busco.ezlab.org/v2/datasets/basidiomycota_odb9.tar.gz
-wget http://busco.ezlab.org/v2/datasets/metazoa_odb9.tar.gz
-wget http://busco.ezlab.org/v2/datasets/nematoda_odb9.tar.gz
-wget http://busco.ezlab.org/v2/datasets/arthropoda_odb9.tar.gz
-wget http://busco.ezlab.org/v2/datasets/insecta_odb9.tar.gz
-wget http://busco.ezlab.org/v2/datasets/endopterygota_odb9.tar.gz
-wget http://busco.ezlab.org/v2/datasets/hymenoptera_odb9.tar.gz
-wget http://busco.ezlab.org/v2/datasets/diptera_odb9.tar.gz
-wget http://busco.ezlab.org/v2/datasets/vertebrata_odb9.tar.gz
-wget http://busco.ezlab.org/v2/datasets/actinopterygii_odb9.tar.gz
-wget http://busco.ezlab.org/v2/datasets/tetrapoda_odb9.tar.gz
-wget http://busco.ezlab.org/v2/datasets/aves_odb9.tar.gz
-wget http://busco.ezlab.org/v2/datasets/mammalia_odb9.tar.gz
-wget http://busco.ezlab.org/v2/datasets/euarchontoglires_odb9.tar.gz
-wget http://busco.ezlab.org/v2/datasets/laurasiatheria_odb9.tar.gz
-wget http://busco.ezlab.org/v2/datasets/embryophyta_odb9.tar.gz
-wget http://busco.ezlab.org/v2/datasets/protists_ensembl.tar.gz
-wget http://busco.ezlab.org/v2/datasets/alveolata_stramenophiles_ensembl.tar.gz
+export PATH="/path/to/AUGUSTUS/augustus-3.2.3/bin:$PATH"
+export PATH="/path/to/AUGUSTUS/augustus-3.2.3/scripts:$PATH"
+export AUGUSTUS_CONFIG_PATH="/path/to/AUGUSTUS/augustus-3.2.3/config/"
 ```
+
+之后，根照自己研究的物种在<http://busco.ezlab.org/>选择进化上接近的评估数据集，比如说你如果研究鱼，那么"actinopterygii(辐鳍鱼类)"就比"metazoa(多细胞动物)"更加合适.
+
+> 实际运行时可能还存在链接库无法找寻以至于程序出错，解决方法就是将相对应或着接近的库拷贝或软链接到`~/miniconda3/env/assembly/lib`下。
