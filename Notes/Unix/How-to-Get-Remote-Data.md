@@ -31,7 +31,7 @@ mkdir rice_contigs && cd rice_contigs
 wget -r 1 -np -nd -A *.fa.gz http://202.127.18.228/RicePanGenome/
 ```
 
-![](http://oex750gzt.bkt.clouddn.com/18-1-20/30535265.jpg)
+![downloads](http://oex750gzt.bkt.clouddn.com/18-1-20/30535265.jpg)
 
 wget能够通过FTP和HTTP协议下载数据，在网页中递归爬取数据。curl和wget有点不一样，它默认下载数据到标准输出，并且支持SFTP和SCP协议。例如从phytozome里下载数据需要登陆，官方推荐的命令行下载方式就是curl
 

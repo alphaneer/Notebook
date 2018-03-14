@@ -293,12 +293,15 @@ C值表示和BUSCO集相比的完整度，M值表示可能缺少的基因数，D
 
 98% vs 85%, 一下子对比就出来了。综上，从两个维度上证明的SPAdes不但组装效果好，而且基因完整度也高，当然它的内存消耗也是很严重。这都是取舍的过程。
 
+上述使用BUSCO对细菌的基因组组装质量进行评估，而我实际上接触的更多是植物基因组。Elisabeth(et. 2016)使用了CEGMA, BUSCO, coreGF和EST/RNA-seq分别评估了几个高质量的植物基因组的完整性，由于BUSCO使用单拷贝基因进行评估，所以在评估植物基因完整性的打分上就会出现高估的情况，因此在评估多倍体植物的基因完整度时需要谨慎。
+
 ## 附录
 
 ### 参考资料
 
 - Bandage: <https://github.com/rrwick/Bandage/wiki>
 - QUAST: <http://quast.bioinf.spbau.ru/manual.html>
+- "AreWe There Yet? Reliably Estimating the Completeness of Plant Genome Sequences"
 
 ### 软件安装
 
@@ -496,4 +499,4 @@ export AUGUSTUS_CONFIG_PATH="/path/to/AUGUSTUS/augustus-3.2.3/config/"
 
 之后，根照自己研究的物种在<http://busco.ezlab.org/>选择进化上接近的评估数据集，比如说你如果研究鱼，那么"actinopterygii(辐鳍鱼类)"就比"metazoa(多细胞动物)"更加合适.
 
-> 实际运行时可能还存在链接库无法找寻以至于程序出错，解决方法就是将相对应或着接近的库拷贝或软链接到`~/miniconda3/env/assembly/lib`下。
+> 实际运行时可能还存在链接库无法找寻以至于程序出错，解决方法就是将相对应或着接近的库拷贝或软链接到`~/miniconda3/env/assembly/lib`下。BLAST版本建议在2.2，高版本的BLAST由于多线程的问题会导致运行出错，最终导致最后结果错误。
