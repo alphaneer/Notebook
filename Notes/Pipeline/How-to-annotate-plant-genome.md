@@ -83,6 +83,13 @@ GO注释使用[AHRD流程](https://github.com/groupschoof/AHRD/)
 
 鉴定基因组重复区域的方法有两种：一种基于文库(library)的同源(homology)方法，该文库收集了其他物种的某一种重复的一致性序列，通过相似性来鉴定重复；另一种是从头预测(_de novo_)，将序列和自己比较或者是高频K-mer来鉴定重复。
 
+## 功能注释
+
+- IPR, Pfam: interproscan
+- GO: interproscan
+- KEGG: 本地BLAST
+- uniport: 本地BLAST
+
 ## 附录
 
 基因组注释的常用软件：
@@ -90,7 +97,7 @@ GO注释使用[AHRD流程](https://github.com/groupschoof/AHRD/)
 - 重复区域
   - RepeatMasker：识别基因组中的可能重复
   - RepeatModeler: 识别新的重复序列
-  - LTR-FINDER: 
+  - LTR-FINDER: <http://tlife.fudan.edu.cn/ltr_finder/>
 - 从头预测
   - Augustus
   - Fgeneesh
@@ -124,7 +131,14 @@ GO注释使用[AHRD流程](https://github.com/groupschoof/AHRD/)
 这一部分主要准备练习用数据和安装MAKER。数据下载比较容易，工具安装则可能比较麻烦。
 
 ```bash
-# 任意工作环境下
+# Cardamine hirsutat基因组数据
+mkdir chi_annotation && cd chi_annotation
+wget http://chi.mpipz.mpg.de/download/sequences/chi_v1.fa
+cat chi_v1.fa | tr 'atcg' 'ATCG' > chi_unmasked.fa
+# Cardamine hirsutat转录组数据
+wget -4 -q -A '*.fastq.gz' -np -nd -r 2 http://chi.mpipz.mpg.de/download/fruit_rnaseq/cardamine_hirsuta/ &
+wget -4 -q -A '*.fastq.gz' -np -nd -r 2 http://chi.mpipz.mpg.de/download/leaf_rnaseq/cardamine_hirsuta/ &
+# maker2教程数据
 wget http://weatherby.genetics.utah.edu/data/maker_tutorial.tgz
 tar xf maker_tutorial
 ```

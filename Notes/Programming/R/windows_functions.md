@@ -134,7 +134,7 @@ df <- data.frame(walk = seq(1,1000,1), position = walks )
 ggplot(df, aes(walk, position)) + geom_point()
 ```
 
-![](../../Pictures/random_walks.png)
+![random walk](../../Pictures/random_walks.png)
 
 ### 循环聚合
 
@@ -172,4 +172,4 @@ ggplot(df, aes(walk, position)) + geom_point()
 
 每个值都会根据前面15步计算当前位置，因此结果图就很奇妙了。
 
-![](../../Pictures/roll_function.png)
+![random wlaks version 2](../../Pictures/roll_function.png)
