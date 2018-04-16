@@ -15,7 +15,9 @@ notebook: *NIX基础
 
 ## SGE命令的常见用法
 
-1. 投递任务到指定队列all.q
+### 投递任务
+
+**投递到到指定队列all.q**:
 
 ```bash
 # 方法一
@@ -42,7 +44,7 @@ qsub -pe openmpi 4 -V -cwd -q wangjw -l vf=25g -j y -b y -sync y -N batch.sh
 # -sync
 ```
 
-1. 投递任务到指定节点
+**投递任务到指定节点**:
 
 ```bash
 qsub -cwd -l vf=*G -l h=node1 *.sh
@@ -50,33 +52,49 @@ qsub -cwd -l vf=*G -l h=node1 -P project -q all.q *.sh
 # -P 参数指明任务所属的项目
 ```
 
-1. 查询任务
-    qstat -f            查看所有任务
-    qstat -j jobId   按任务id查看
-    qstat -u user   按用户查看
-    任务状态：
-    qw    表示等待状态
-    Eqw  投递任务出错
-    r       表示任务正在运行
-    dr     节点挂了之后，删除任务就会出现这个状态，只有节点重启之后，任务才会消失
+### 查询任务
 
-1. 删除任务
-    qdel -j 1111   删除任务号为1111的任务
+```bash
+qstat -f        # 查看所有任务
+qstat -j jobId  # 按任务id查看
+qstat -u user   # 按用户查看
+```
 
-1. 其他命令
-    qrsh  与qsub相比，是交互式的投递任务，注意参数：
-            -now yes|no   默认设置为yes 
-                     若设置为yes，立即调度作业，如果没有可用资源，则拒绝作业，任务投递失败，任务状态为Eqw。
-                     若设置为no，调度时如果没有可用资源，则将作业排入队列，等待调度。
-            例子： qrsh -l vf=*G -q all.q -now no -w n *sh
-    qacct  从集群日志中抽取任意账户信息
-    qalter 更改已提交但正处于暂挂状态的作业的属性
-    qconf 为集群和队列配置提供用户界面
-    qhold 阻止已提交作业的执行
-    qhost 显示SGE执行主机（即各个计算节点）的状态信息
-    qlogin 启动telnet或类似的登录会话。
+任务状态：
 
-1. bash脚本与Linux环境变量
-    为了防止脚本运行时找不到环境变量，在投递的bash脚本的前面最好加上以下两句话：
-    #! /bin/bash
-    #$ -S /bin/bash
+- qw: 表示等待状态
+- Eqw: 投递任务出错
+- r: 表示任务正在运行
+- dr: 节点挂了之后，删除任务就会出现这个状态，只有节点重启之后，任务才会消失
+
+### 删除任务
+
+```bash
+qdel -j 1111   删除任务号为1111的任务
+```
+
+### 其他命令
+
+- qrsh：与qsub相比，是交互式的投递任务，注意参数:`-now yes|no`默认设置为yes
+    - 若设置为yes，立即调度作业，如果没有可用资源，则拒绝作业，任务投递失败，任务状态为Eqw。
+    - 若设置为no，调度时如果没有可用资源，则将作业排入队列，等待调度。
+    - 例子： qrsh -l vf=*G -q all.q -now no -w n *sh
+- qacct  从集群日志中抽取任意账户信息
+- qalter 更改已提交但正处于暂挂状态的作业的属性
+- qconf 为集群和队列配置提供用户界面
+- qhold 阻止已提交作业的执行
+- qhost 显示SGE执行主机（即各个计算节点）的状态信息
+- qlogin 启动telnet或类似的登录会话。
+
+## SGE运行脚本配置
+
+除了在qsub使用的时候指定参数，还可以将参数写在shell脚本中. 举个例子
+
+```bash
+#! /bin/bash
+#$ -S /bin/bash
+```
+
+第一行的`#!/bin/bash`用来表明使用的程序，这里是bash。如果是以`#$`开头，则会在运行脚本时成为qsub的参数。这里的`#$ -S /bin/bash`表明执行该脚本使用的`/bin/bash`
+
+`-pe parallel_env`: 并行代码环境(parallel programming environment), 可以通过`qconf -spl`了解选项。

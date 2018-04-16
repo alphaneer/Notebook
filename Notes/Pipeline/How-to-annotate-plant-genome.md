@@ -100,7 +100,7 @@ GO注释使用[AHRD流程](https://github.com/groupschoof/AHRD/)
   - LTR-FINDER: <http://tlife.fudan.edu.cn/ltr_finder/>
 - 从头预测
   - Augustus
-  - Fgeneesh
+  - Fgenesh
 - 同源预测
   - GeneWise
   - Trinity
