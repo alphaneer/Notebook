@@ -18,7 +18,7 @@ notebook: 分析流程
 
 除了染色体细胞核内的三维结构外，还需要谈谈和转录调控相关的染色质的核小体。用**内切核糖酶**--微球菌核酸酶(micrococcal nuclease, **MNase**, MN酶)处理染色质可以得到单个核小体。**核小体**是染色质的基本结构，由DNA、蛋白质和RNA组成的一种致密结构。组蛋白是由2个H3-H4二聚体，2个H2A-H2B二聚体形成的八聚体，直径约为10 nm， 组蛋白八聚体和DNA结合在一起形成的核心颗粒包含146bp DNA。DNA暴露在核小体表面使得其能被特定的核酸酶接近并切割。
 
-![](http://oex750gzt.bkt.clouddn.com/17-12-15/86776671.jpg)
+![核小体](http://oex750gzt.bkt.clouddn.com/17-12-15/86776671.jpg)
 
 染色质结构改变会发生在与转录起始相关或与DNA的某种结构特征相关的特定位点。当染色质用**DNA酶I(DNase)**消化时，第一个效果就是在双链体中特定的**超敏位点(hypersenitive site)**引入缺口，这种敏感性可以反应染色质中DNA的可及性(accessible)，也就是说这些是染色质中DNA由于未组装成通常核小体结构而特别暴露出的结构。
 
@@ -28,9 +28,9 @@ notebook: 分析流程
 
 背景已经谈到，超敏位点和基因表达有关，并且超敏位点反应了染色质的可及性。也就可以反推出“可及性”的染色质结构区域可能与基因表达调控相关。于是2015年的一篇文章[Transposition of native chromatin for fast and sensitive epigenomic profiling of open chromatin, DNDNA-binding proteins and nucleosome position](https://www.nature.com/articles/nmeth.2688.pdf)就使用了超敏Tn5转座酶切割染色质的开放区域，并且加上接头(adapter)进行高通量测序。
 
-![](http://oex750gzt.bkt.clouddn.com/17-12-15/27788379.jpg)
+![Tn5转座酶切割](http://oex750gzt.bkt.clouddn.com/17-12-15/27788379.jpg)
 
-![](http://oex750gzt.bkt.clouddn.com/17-12-16/10917527.jpg)
+![文库构建](http://oex750gzt.bkt.clouddn.com/17-12-16/10917527.jpg)
 
 那篇文章通过ATAC-Seq得到了如下结论：
 
@@ -75,7 +75,7 @@ notebook: 分析流程
 
 **质量控制**：在数据分析之前先要大致了解手头数据的质量，目前基本就用fastqc了
 
-![](http://oex750gzt.bkt.clouddn.com/17-12-16/20840134.jpg)
+![multiqc展示](http://oex750gzt.bkt.clouddn.com/17-12-16/20840134.jpg)
 
 FastQC结果大部分都过关，除了在read的各位置碱基含量图上fail。具体原因我还不知道，文章中并没有提到要对原始数据进行预处理。
 
@@ -89,7 +89,7 @@ FastQC结果大部分都过关，除了在read的各位置碱基含量图上fail
 
 初步比对后，可以统计下比对到organellar genomesh和nuclear genome的read数量。这个工具可以在shell脚本中用samtools处理，也可以用python的pysam模块.Pysam封装了htslib C-API，提供了SAM/BAM/VCF/BCF/BED/GFF/GTF/FASTA/FASTQ的操作，最新版本已经支持Python3,强烈推荐学习。
 
-![](http://oex750gzt.bkt.clouddn.com/17-12-18/27220737.jpg)
+![统计比例](http://oex750gzt.bkt.clouddn.com/17-12-18/27220737.jpg)
 
 可能这是作者第一次采用INTACT的方式从干细胞和叶肉细胞中提取细胞核做ATAC-Seq，由于植物细胞本身原因，大量read比对到了细胞器上。
 
@@ -130,9 +130,9 @@ macs2 callpeak -t  # 处理文件
 
 - ATAC-Seq peak-calling: ZINBA 参数 window size=300bp, offset=75bp. 保留先验概率大于0.8.
 - 基于染色质注释的ATAC-Seq插入大小富集分析：计算和各个染色质状态重叠的PE序列片段长度分布。
-- 核小体位置：首先将read分组， 低于100bp的read为零核小体； 180 ~ 247 bp单核小体；315~473为双核小体；558~615bp为三核小体（原因如下图）。双核小体reads被分成2个reads，三核小体被分成3个reads。reads使用Danpos和Dantools(-p 1, -a 1, -d 20, -clonalcut 0)进行分析。使用零核小体作为背景。
+- 核小体位置：首先将read分组， 低于100bp的read为零核小体； 180 ~ 247 bp单核小体；315 ~ 473为双核小体；558 ~ 615bp为三核小体（原因如下图）。双核小体reads被分成2个reads，三核小体被分成3个reads。reads使用Danpos和Dantools(-p 1, -a 1, -d 20, -clonalcut 0)进行分析。使用零核小体作为背景。
 
-![](http://oex750gzt.bkt.clouddn.com/17-12-15/9883328.jpg)
+![核小体分布](http://oex750gzt.bkt.clouddn.com/17-12-15/9883328.jpg)
 
 ## ATAC-Seq分析工具总结
 

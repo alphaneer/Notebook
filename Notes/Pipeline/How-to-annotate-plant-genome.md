@@ -37,7 +37,7 @@ notebook: 分析流程
 
 文章标题为“The Cardamine hirsuta genome offers insight into the evolution of morphological diversity”。
 
-**同源注释**：使用 _Genomethreader_ 以拟南芥为剪切模型，以及PlantsGDB resource上 _Brassica rapa_ (v1.1), _A. thaliana_(TAIR10), _A. lyrata_ (v6), _tomato_ (v3.6), _poplar_ (v2) 和 _A. thaliana_ (version PUT-169), _B. napus_ (version PUT-172) EST assemblies 的完整的代表性蛋白集。
+**同源注释**：使用 _GenomeThreader_ 以拟南芥为剪切模型，以及PlantsGDB resourc上 _Brassica rapa_ (v1.1), _A. thaliana_(TAIR10), _A. lyrata_ (v6), _tomato_ (v3.6), _poplar_ (v2) 和 _A. thaliana_ (version PUT-169), _B. napus_ (version PUT-172) EST assemblies 的完整的代表性蛋白集。
 
 **转录本预测**： 将 _C. hirsuta_ RNA-seq数据比对到基因序列，然后用cufflinks拼接
 
@@ -67,23 +67,268 @@ GO注释使用[AHRD流程](https://github.com/groupschoof/AHRD/)
 
 ## 基因注释1,2,3
 
-当我们谈到基因注释的时候，我们通常认为注释是指“对基因功能的描述”，比如说A基因在细胞的那个部分，通过招募B来调控C，从而引起病变。但是得到如下的基因结构也是注释的一种形式，也就是看似随机的ATCG的碱基排列中找到特殊的部分，而这些特殊的区域有着不一样的功能。
+当我们谈到基因注释的时候，我们通常认为注释是指“对基因功能的描述”，比如说A基因在细胞的那个部分，通过招募B来调控C，从而引起病变。但是基因结构也是注释的一种形式，而且是先决条件，也就是在看似随机的ATCG的碱基排列中找到特殊的部分，而这些特殊的区域有着不一样的功能。
 
 ![gene structure](http://oex750gzt.bkt.clouddn.com/18-3-9/15619924.jpg)
 
-在正式启动基因组注释项目之前，需要先检查组装是否合格，比如contig N50的长度是否大于基因的平均长度，使用BUSCO/CEGMA检查基因的完整性，如果不满足要求，可能输出结果中大部分的contig中都不存在一个完整的基因结构。当组装得到的contig符合要求时，就了基因组注释环节，这一步分为三步：基因结构预测，基因注释，可视化和质控。
+在正式启动基因组注释项目之前，需要先检查组装是否合格，比如contig N50的长度是否大于基因的平均长度，使用BUSCO/CEGMA检查基因的完整性，如果不满足要求，可能输出结果中大部分的contig中都不存在一个完整的基因结构。当组装得到的contig符合要求时，就可以开始基因组注释环节，这一步分为三步：基因结构预测，基因功能注释，可视化和质控。
 
-基因结构预测和基因注释是不同的概念。前者通过计算方式，以从头预测、同源比对的方式得到**可能**的基因结构，相当于收集线索。后者是基于前者收集的线索进行梳理，最终确定“最可能”的模型。这一点告诉我们，面对非模式植物的注释时，一定要谨慎，不要盲目使用。也就是说我们需要通过进一步通过可视化的方式，抽样或者挑选自己的目标基因进行检查，因为从某种程度上，人类模式识别能力还是最一流的。
+### 基因结构注释
 
-### 重复序列屏蔽
+基因结构注释应是功能注释的先决条件，完整的真核生物基因组注释流程需要如下步骤：
 
-真核生物的基因组存在大量的重复序列，植物基因组的重复序列甚至可以高达80%。尽管重复序列对维持染色体的空间结构、基因的表达调控、遗传重组等都具有重要作用，但是却会导致BLAST的结果出现大量假阳性，增加基因结构的预测的计算压力甚至影响注释正确性。基因组中的重复按照序列特征可以分为两类：串联重复(tandem repeats)和散在重复(interspersed repeats).
+1. 必要的基因组重复序列屏蔽
+2. 从头寻找基因, 可用工具为: GeneMarkHMM, FGENESH, Augustus, SNAP, GlimmerHMM, Genscan
+3. 同源蛋白预测, 内含子分析: GeneWIse, Exonerate
+4. 将EST序列，全长cDNA序列和Trinity/Cufflinks/Stringtie组装的转录组和基因组联配
+5. 如果第4步用到了多个数据来源，使用PASA基于重叠情况进行联配
+6. 使用EvidenceModler根据上述结果进行整合
+7. 使用PASA更新EVM的一致性预测，增加UTR注释和可变剪切注释
+8. 必要的人工检查
+
+基本上是套路化的分析流程，也就有一些工具通过整合几步开发了流程管理工具，比如说BRAKER结合了GeneMark和Augustus，MAKER2整合了SNAP,Exonerate，虽然BRAKER说自己的效果比MAKER2好，但是用的人似乎不多，根据web of knowledge统计，两者的引用率分别是44,283, 当然BRAKER是2016，MAKER2是2011，后者在时间上有优势。
+
+这里准备先按部就班的按照流程进行注释，所用的数据是 _Cardamine hirsuta_ , 数据下载方式如下
+
+```bash
+# Cardamine hirsutat基因组数据
+mkdir chi_annotation && cd chi_annotation
+wget http://chi.mpipz.mpg.de/download/sequences/chi_v1.fa
+cat chi_v1.fa | tr 'atcg' 'ATCG' > chi_unmasked.fa
+# 注释结果
+wget http://chi.mpipz.mpg.de/download/annotations/carhr38.gff
+# Cardamine hirsutat转录组数据
+mkdir rna-seq && cd rna-seq
+wget -4 -q -A '*.fastq.gz' -np -nd -r 2 http://chi.mpipz.mpg.de/download/fruit_rnaseq/cardamine_hirsuta/ &
+wget -4 -q -A '*.fastq.gz' -np -nd -r 2 http://chi.mpipz.mpg.de/download/leaf_rnaseq/cardamine_hirsuta/ &
+```
+
+软件安装不在正文中出现，会放在附录中，除了某些特别复杂的软件。
+
+#### 01-重复序列屏蔽
+
+**重复屏蔽**：真核生物的基因组存在大量的重复序列，植物基因组的重复序列甚至可以高达80%。尽管重复序列对维持染色体的空间结构、基因的表达调控、遗传重组等都具有重要作用，但是却会导致BLAST的结果出现大量假阳性，增加基因结构的预测的计算压力甚至影响注释正确性。基因组中的重复按照序列特征可以分为两类：串联重复(tandem repeats)和散在重复(interspersed repeats).
 
 ![人类中的重复序列划分](http://oex750gzt.bkt.clouddn.com/18-3-14/14545377.jpg)
 
 鉴定基因组重复区域的方法有两种：一种基于文库(library)的同源(homology)方法，该文库收集了其他物种的某一种重复的一致性序列，通过相似性来鉴定重复；另一种是从头预测(_de novo_)，将序列和自己比较或者是高频K-mer来鉴定重复。
 
+目前重复序列注释主要软件就是RepeatMasker和RepeatModel。这里要注意分析的fasta的ID不能过长，不然会报错。如果序列ID过长可以使用bioawk进行转换，后续用到RepatModel不支持多行存放序列的fasta格式。
+
+直接使用同源注释工具RepeatMasker寻找重复序列：
+
+```bash
+mkdir 00-RepeatMask
+~/opt/biosoft/RepeatMasker/RepeatMasker -e ncbi -species arabidopsis -pa 40 -gff -dir 00-RepeatMask/ chi_unmasked.fa
+# -e ncbi
+# -species 选择物种 用~/opt/biosoft/RepeatMasker/util/queryRepeatDatabase.pl -tree 了解
+# -lib 增加额外数据库,
+# -pa 并行计算
+# -gff 输出gff注释
+# -dir 输出路径
+# annotation with the library produced by RepeatModel
+```
+
+输出结果中主要关注如下三个(其中xxx表示一类文件名)
+
+- xxx.fa.masked, 将重复序列用N代替
+- xxx.fa.out.gff, 以gff2形式存放重复序列出现的位置
+- xxx.fa.tbl, 该文件记录着分类信息
+
+```bash
+cat 00-RepeatMask/chi_unmasked.fa.tbl
+==================================================
+file name: chi_unmasked.fa
+sequences:           624
+total length:  198654690 bp  (191241357 bp excl N/X-runs)
+GC level:         35.24 %
+bases masked:   35410625 bp ( 17.83 %)
+==================================================
+```
+
+也就是说该物种198M中有将近18%的重复序列，作为参考，拟南芥125Mb 14%重复序列, 水稻389M，36%重复，人类基因组是3G，50%左右的重复序列。
+
+使用最后的`chi_unmasked.fa.masked`用于下一步的基因结构预测。
+
+注：当然也可以用RepeatModel进行从头预测，得到的预测结果后续可以整合到RepeatMasker
+
+```bash
+# de novo predict
+~/opt/biosoft/RepeatModeler-open-1.0.11/BuildDatabase -name test -engine ncbi output.fa
+~/opt/biosoft/RepeatModeler-open-1.0.11/RepeatModeler -database test
+```
+
+这一步速度极其慢，由于我们的目的只是获取屏蔽后序列降低后续从头预测的压力，所以可以先不做这一步。在后续分析重复序列在基因组进化上的作用时可以做这一步。下
+
+> 如果从头预测的结果与同源预测的结果有30%以上的overlap，并且分类不一致，会把从头预测的结果过滤掉。从头预测与同源预测结果有overlap，但是分类一致的，都会保留。但是统计的时候不会重复统计。
+
+#### 02-从头(ab initio)预测基因
+
+##### 基于已有模型或无监督训练
+
+目前的从头预测软件大多是基于HMM(隐马尔科夫链)和贝叶斯理论，通过已有物种的注释信息对软件进行训练，从训练结果中去推断一段基因序列中可能的结构，在这方面做的最好的工具是**AUGUSTUS** 它可以仅使用序列信息进行预测，也可以整合EST, cDNA, RNA-seq数据作为先验模型进行预测。
+
+AUGUSTUS的无root安装比较麻烦，我折腾了好几天最后卒，不过辛亏有bioconda，`conda create -n annotation augustus=3.3`.
+
+它的使用看起来很简单，我们可以尝试使用一段拟南芥已知的基因序列让其预测，比如前8k序列
+
+```bash
+seqkit faidx TAIR10.fa Chr1:1-8000 > test.fa
+augustus --speices=arabidopsis test.fa > test.gff
+```
+
+如果仅仅看两者的CDS区，结果完全一致，相当于看过一遍参考答案去做题目，题目都做对了。
+
+> 注:已经被训练的物种信息可以用`augustus --species=help`查看。
+
+![结果比较](http://oex750gzt.bkt.clouddn.com/18-5-3/84347301.jpg)
+
+在**不使用RNA-seq数据**的情况下，可以基于拟南芥的训练模型进行预测，采用下面的方式多条染色体并行augustus
+
+```bash
+mkdir 01-augustsus && cd 01-augustsus
+ln ../00-RepeatMask/chi_unmasked.fa.masked genome.fa
+seqkit split genome.fa #结果文件在genome.fa.split
+find genome.fa.split/ -type f -name "*.fa" | parallel -j 30 augustus --species=arabidopsis --gff3=on >> temp.gff #并行处理
+join_aug_pred.pl < temp.gff  | grep -v '^#' > temp.joined.gff
+bedtools sort -i temp.joined.gff > augustsus.gff
+```
+
+AUGUSTUS依赖于已有的模型，而**GeneMark-ES/ET**则是唯一一款支持无监督训练模型，之后再识别真核基因组蛋白编码区的工具。
+
+```bash
+gmes_petap.pl --ES --sequence genome.fa --cores 50
+```
+
+最后得到的是genemark.gtf，是标准的GTF格式，可以使用Sequence Ontology Project提供的gtf2gff3.pl进行转换
+
+```bash
+wget http://genes.mit.edu/burgelab/miso/scripts/gtf2gff3.pl
+chmod 755 gtf2gff3.pl
+gtf2gff3.pl genemark.gtf | bedtools sort -i - > genemark.gff
+```
+
+不同从头预测软件的实际效果可以通过在IGV中加载文章提供的gff文件和预测后的gff文件进行比较，一般会存在如下几个问题：
+
+- 基因多了，或者少了，也就是假阳性和假阴性现象
+- UTR区域难以预测，这个比较正常
+- 未正确识别可变剪切位点，导致前后几个基因识别成一个基因
+
+考虑到转录组测序已经非常便宜，可以通过该物种的RNA-seq提供覆盖度信息进行预测。
+
+##### 基于转录组数据预测
+
+根据已有的模型或者自训练可以正确预测很大一部分的基因，但如果需要提高预测的正确性，还需要额外的信息。在过去就需要提供物种本身的cDNA, EST，而现在更多的是基于转录组序列进行训练。尽管RNA-seq数据在基因组上的比对情况能够推测出内含子位置，根据覆盖度可以推测出外显子和非编码区的边界，但是仅仅依赖于RNA-seq的覆盖不能可信地推测出蛋白编码区(Hoff K.J. Stanke M. 2015).
+
+AUGUSTUS可以利用转录组比对数据中的位置信息来训练模型，GeneMark-ET可以利用RNA-seq得到的内含子位点信息自我训练HMM参数，进行基因预测。BRAKER2将两者进行整合，使用GeneMark-ET根据RNA-seq无监督训练模型寻找基因，然后用AUGUSTUS进行模型训练，最后完成基因预测
+
+![BRAKER流程](http://oex750gzt.bkt.clouddn.com/18-5-6/75462329.jpg)
+
+首先使用hisat2根据屏蔽后的参考序列建立索引，进行比对。
+
+```bash
+# 项目根目录
+mkdir index
+hisat2-build 01-augustus/genome.fa index/chi_masked
+hisat2 -p 20 -x index/chi_masked -1 rna-seq/leaf_ox_r1_1.fastq.gz -2 rna-seq/leaf_ox_r1_2.fastq.gz | samtools sort -@ 10 > 02-barker/leaf_ox_r1.bam &
+isat2 -p 20 -x index/chi_masked -1 rna-seq/ox_flower9_rep1_1.fastq.gz -2 rna-seq/ox_flower9_rep1_2.fastq.gz | samtools sort -@ 10 > 02-barker/ox_flower9.bam &
+hisat2 -p 20 -x index/chi_masked -1 rna-seq/ox_flower16_rep1_1.fastq.gz -2 rna-seq/ox_flower16_rep1_2.fastq.gz | samtools sort -@ 10 > 02-barker/ox_flower16.bam &
+```
+
+然后，以未屏蔽重复序列的参考序列和BAM文件作为输入，让BRAKER2（安装会稍显麻烦，因为依赖许多软件）进行预测。
+
+```bash
+braker.pl --gff3 --cores 50 --species=carhr --genome=chi_unmasked.fa --bam=02-barker/leaf_ox_r1.bam,02-barker/ox_flower16.bam,02-barker/ox_flower9.bam
+# --gff3: 输出GFF3格式
+# --genome: 基因组序列
+# --bam: 比对后的BAM文件，允许多个
+# --cores: 处理核心数
+```
+
+最后会得到如下输出文件
+
+- hintsfile.gff: 从RNA-seq比对结果的BAM文件中提取，其中内含子用于训练GeneMark-EX, 使用所有特征训练AUGUSTUS
+- GeneMark-ET/genemark.gtf: GeneMark-EX根据RNA-seq数据训练后预测的基因
+- augustus.hints.gff: AUGUSTUS输出文件
+
+将augustus.hints.gff3和文章的注释文件(carhr38.gtf)比较，见下图：
+
+![comparation](http://oex750gzt.bkt.clouddn.com/18-5-6/53345073.jpg)
+
+其实不难发现，在不考虑UTR区域情况下，两者的差别其实更多表现是基因数目上，其实也就是利用转录组数据推测结构的问题所在，没有覆盖的区域到底是真的没有基因，还是有基因结构只不过所用组织没有表达，或者说那个区域其实是假基因？此外，如果基因间隔区域很短，有时候还会错误地把两个不同的基因预测为一个基因。因此，应该注重RNA-seq数据在**剪切位点识别**和**外显子边界确定**的优势。
+
+#### 03-同源预测基因结构
+
+同源预测(homology prediction)利用近缘物种已知基因进行序列比对，找到同源序列。然后在同源序列的基础上，根据基因信号如剪切信号、基因起始和终止密码子对基因结构进行预测，如下示意图：
+
+![同源注释](http://oex750gzt.bkt.clouddn.com/18-5-6/72985035.jpg)
+
+相对于从头预测的“大海捞针”，同源预测相当于先用一块磁铁在基因组大海中缩小了可能区域，然后从可能区域中鉴定基因结构。在10年之前，当时RNA-seq还没有普及, 只有少部分物种才有EST序列和cDNA序列的情况下，这的确是一个比较好的策略，那么问题来了，现在还需要进行这一步吗，如果需要是出于那种角度考虑呢?
+
+在同源预测上，目前看到的大部分基因组文章都是基于TBLASTN + GeneWise，这可能是因为大部分基因组文章都是国内做的，这些注释自然而言用的就是公司的流程，然后目前国内的公司大多数又和某一家公司有一些关系。不过最近的3010水稻泛基因组用的是MAKER, 感谢部分提到这部分工作是由M. Roa(Philippine Genome Center Core Facilities for Bioinformatics, Department of Science)做的，算是一股清流吧。当然我在看Cardamine hirsuta基因组注释问斩，发现它们同源注释部分用的是GenomeThreader, 该工具在本篇文章成文时的3月之前又更新了。
+
+GeneWise的网站说它目前由Ewan Birney维护，只不过不继续开发了，因为Guy Slater开发Exonerate解决了GeneWise存在的很多问题，并且速度快了1000倍。考虑到目前只有GeneWise能利用HMM根据蛋白找DNA，而且ENSEMBL的注释流程也有一些核心模块用到了它，所以作者依旧在缓慢的开发这个工具(自2.4.1已经10多年没有更新了)，当然这个具也是非常的慢。尽管这一步不会用到GeneWise作为我们的同源注释选项，但是我们可以尝试用GeneWise手工注释一个基因，主要步骤如下
+
+- 第一步： 使用BLASTX，根据dna序列搜索到蛋白序列，只需要第一个最佳比对结果
+- 第二步： 选择最佳比对的氨基酸序列
+- 第三步： 将dna序列前后延长2kb，与氨基酸序列一并传入给genewise进行同源预测
+
+提取前5K序列，然后选择在TAIR上用BLASTX进行比对
+
+```bash
+seqkit faidx chi_unmasked.fa Chr1:1-5000 > chr1_5k.fa
+```
+
+![BLASTX](http://oex750gzt.bkt.clouddn.com/18-5-4/95680493.jpg)
+
+选择第一个比对结果中的氨基酸序列，和前5k的DNA序列一并作为GeneWise的输入
+
+![GeneWise2](http://oex750gzt.bkt.clouddn.com/18-5-4/34207662.jpg)
+
+最后的结果出乎了我的意料
+
+![预测结果](http://oex750gzt.bkt.clouddn.com/18-5-4/54073337.jpg)
+
+让我们跳过这个尴尬的环节，毕竟很可能是我不太熟练使用工作所致。还是用GenomeThreader基于上面的DNA序列和氨基酸序列进行同源基因结构预测吧
+
+```bash
+gth -genomic chr1_5k.fa -protein cer.fa -intermediate -gff3out
+# 其中cer.fa就是AT1G02205.2的氨基酸序列
+```
+
+结果一致，并且从RNA-seq的覆盖情况也符合预期
+
+```bash
+Chr1	gth	exon	1027	1197	Parent=gene1	Chr1    MIPS_CARH_v3.8  exon    1027    1197
+Chr1	gth	exon	1275	1448	Parent=gene1	Chr1    MIPS_CARH_v3.8  exon    1275    1448
+Chr1	gth	exon	1541	1662	Parent=gene1	Chr1    MIPS_CARH_v3.8  exon    1555    1662
+Chr1	gth	exon	1807	2007	Parent=gene1	Chr1    MIPS_CARH_v3.8  exon    1807    2007
+Chr1	gth	exon	2085	2192	Parent=gene1	Chr1    MIPS_CARH_v3.8  exon    2085    2192
+Chr1	gth	exon	2294	2669	Parent=gene1	Chr1    MIPS_CARH_v3.8  exon    2294    2669
+Chr1	gth	exon	3636	3855	Parent=gene1	Chr1    MIPS_CARH_v3.8  exon    3636    3855
+Chr1	gth	exon	3971	4203	Parent=gene1	Chr1    MIPS_CARH_v3.8  exon    3971    4203
+Chr1	gth	exon	4325	4548	Parent=gene1	Chr1    MIPS_CARH_v3.8  exon    4325    4548
+Chr1	gth	exon	4676	4735	Parent=gene1	Chr1    MIPS_CARH_v3.8  exon    4676    4735
+```
+
+全基因组范围预测流程如下：
+
+首先从<https://phytozome.jgi.doe.gov/pz/portal.html>或者其他比较靠谱的地方下载靠谱的同源物种的蛋白序列，从不同基因组文章的同源注释来看，目前比较靠谱的物种有
+
+- _Arabidopsis thaliana_
+- _Oryza sativa_
+- A. lyrata
+Brassica oleracea
+B. rapa
+C. rubella
+Panicum virgatum
+Thellungiella haplophila
+
+#### 整合预测结果
+
 ## 功能注释
+
+基因结构预测和基因注释是不同的概念。前者通过计算方式，以从头预测、同源比对的方式得到**可能**的基因结构，相当于收集线索。后者是基于前者收集的线索进行梳理，最终确定“最可能”的模型。这一点告诉我们，面对非模式植物的注释时，一定要谨慎，不要盲目使用。也就是说我们需要通过进一步通过可视化的方式，抽样或者挑选自己的目标基因进行检查，因为从某种程度上，人类模式识别能力还是最一流的。
 
 - IPR, Pfam: interproscan
 - GO: interproscan
@@ -103,14 +348,15 @@ GO注释使用[AHRD流程](https://github.com/groupschoof/AHRD/)
   - Fgenesh
 - 同源预测
   - GeneWise
+  - Exonerate
   - Trinity
-- 自动化注释
-  - GLEAN
-  - EvidenceModeler
-- BRAKER1: 使用GeneMark-ET和AUGUSTUS基于RNA-Seq注释基因结构
+- 注释合并
+  - GLEAN：已经落伍于时代了
+  - EvidenceModeler： 与时俱进
 - 流程
   - PASA：真核生物基因的转录本可变剪切自动化注释项目，需要提供物种的EST或RNA-seq数据
   - MAKER
+  - BRAKER1: 使用GeneMark-ET和AUGUSTUS基于RNA-Seq注释基因结构
 - 可视化
   - IGV
   - JBrowse/GBrowse
@@ -125,10 +371,11 @@ GO注释使用[AHRD流程](https://github.com/groupschoof/AHRD/)
 - MAKER2教程: <http://weatherby.genetics.utah.edu/MAKER/wiki/index.php/MAKER_Tutorial_for_WGS_Assembly_and_Annotation_Winter_School_2018>
 - 《生物信息学》 樊龙江: 第1-5章: 基因预测与功能注释
 - 《NGS生物信息分析》 陈连福： 真核生物基因组基因注释
+- JGS流程: <https://genome.jgi.doe.gov/programs/fungi/FungalGenomeAnnotationSOP.pdf>
 
 ## 环境准备
 
-这一部分主要准备练习用数据和安装MAKER。数据下载比较容易，工具安装则可能比较麻烦。
+### 数据下载
 
 ```bash
 # Cardamine hirsutat基因组数据
@@ -138,94 +385,15 @@ cat chi_v1.fa | tr 'atcg' 'ATCG' > chi_unmasked.fa
 # Cardamine hirsutat转录组数据
 wget -4 -q -A '*.fastq.gz' -np -nd -r 2 http://chi.mpipz.mpg.de/download/fruit_rnaseq/cardamine_hirsuta/ &
 wget -4 -q -A '*.fastq.gz' -np -nd -r 2 http://chi.mpipz.mpg.de/download/leaf_rnaseq/cardamine_hirsuta/ &
-# maker2教程数据
-wget http://weatherby.genetics.utah.edu/data/maker_tutorial.tgz
-tar xf maker_tutorial
 ```
 
-MAKER依赖的软件包比较多，最容易的方法就是用bioconda安装，你只需要等待半小时就似乎得到了一个可用的环境。下面部分仅提供另一种折腾思路，不推荐模仿。
-
-这里安装的MAKER-P，包含标准的MAKER，以及植物注释的相关工具。
-
-首先你需要先通过<http://www.yandell-lab.org/software/maker.html>里注册链接，表明自己是用于学术用途，而不是商业。目前稳定版是2.31.9，开发版是3.01，我使用稳定版。下载之后，解压缩，按照里面的要求逐步安装。
-
-> 如无特殊说明，软件下载后存放在`~/src`目录下，生信软件安装在`~/opt/biosoft`,系统工具安装在`~/opt/sysoft`, 单个二进制软件存在`~/opt/bin`.
-
-**OpenMPI**: MPI(Message Passing Library)库，可以提高运行速度，选择性安装
-
-```bash
-cd ~/src
-wget https://www.open-mpi.org/software/ompi/v3.0/downloads/openmpi-3.0.0.tar.gz
-tar xf openmpi-3.0.0.tar.gz
-cd openmpi-3.0.0
-./configure --prefix=$HOME/opt/sysoft/openmpi-3.0.0
-make && make install
-# 环境变量
-export PATH=$HOME/opt/sysoft/openmpi-3.0.0/bin:$PATH
-export LD_RUN_PATH=$HOME/opt/sysoft/openmpi-3.0.0/lib:${LD_RUN_PATH:+:${LD_RUN_PATH}}
-export LD_LIBRARY_PATH=$HOME/opt/sysoft/openmpi-3.0.0/:${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
-```
-
-**Perl模块**, 我选择编译一个最新的Perl，因为自己编译Perl的好处就在于之后的perl模块都会安装到自己的Perl目录下，而不会对系统造成影响。
-
-```bash
-cd ~/src
-wget -4 http://www.cpan.org/src/5.0/perl-5.26.1.tar.gz
-tar xf perl-5.26.1.tar.gz
-cd perl-5.26.1
-./Configure -des -Dprefix=$HOME/opt/sysoft/perl-5.26.1
-make test
-make install
-```
-
-为了方便后续安装，先下载一个`cpanm`, 并增加国内镜像地址
-
-```bash
-wget https://cpan.metacpan.org/authors/id/M/MI/MIYAGAWA/App-cpanminus-1.7043.tar.gz
-tar xf App-cpanminus-1.7043.tar.gz
-cd App-cpanminus-1.7043
-perl Makefile.PL
-make test && make install
-echo 'alias cpanm="~/opt/sysoft/perl-5.26.1/bin/cpanm --mirror http://mirrors.163.com/cpan --mirror-only"' >>~/.bashrc
-```
-
-重启终端后安装所有Perl模块
-
-```bash
-cpanm DBI DBD::SQLite forks forks::shared File::Which Perl::Unsafe::SIgnals Bit::Vector Inline::C IO::All IO::Prompt Bundle::BioPerl Text::Soundex
-```
-
-**BLAST**，BLAST有两个版本可供选择, WuBLAST或者NCBI-BLAST，我个人倾向于NCBI-BLAST，并且推荐使用编译后二进制版本，因为编译实在是太花时间了
-
-```bash
-cd ~/src
-wget ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/ncbi-blast-2.7.1+-x64-linux.tar.gz
-tar xf ncbi-blast-2.7.1+-x64-linux.tar.gz
-mv ncbi-blast-2.7.1+ ~/opt/biosoft
-# 环境变量
-export PATH=~/opt/biosoft/ncbi-blast-2.7.1+/bin:$PATH
-```
-
-**SNAP**: 基因从头预测工具，最后一个版本是2013/11/29，效果还行，在处理含有长内含子上的基因组上表现欠佳
-
-```bash
-# 安装
-cd ~/src
-wget http://korflab.ucdavis.edu/Software/snap-2013-11-29.tar.gz
-tar xf snap-2013-11-29.tar.gz
-cd snap
-make
-cd ..
-mv snap ~/opt/biosoft
-# 环境变量
-export Zoe=~/opt/biosoft/snap/Zoe
-export PATH=~/opt/biosoft/snap:$PATH
-```
+### 软件安装
 
 **RepeatMasker**: 用于注释基因组的重复区，需要安装RMBlast, TRF，以及在<http://www.girinst.org>注册以下载Repbase
 
+安装RepeatMasker
+
 ```bash
-# trf
 cd ~/src
 wget http://tandem.bu.edu/trf/downloadstrf409.linux64
 mv trf409.linux64 ~/opt/bin/trf
@@ -249,13 +417,68 @@ cd ~/opt/biosoft/RepeatMasker
 ## 解压repbase数据到Libraries下
 ## 配置RepatMasker
 perl ./configure
-## 安装成功后的输出
-Congratulations!  RepeatMasker is now ready to use.
-The program is installed with a the following repeat libraries:
-  Dfam database version Dfam_2.0
-  RepeatMasker Combined Database: Dfam_Consensus-20170127, RepBase-20170127
-# 添加环境变量
+```
+
+在上面的基础上安装**RepeatModel**
+
+```bash
+# RECON
+cd ~/src
+wget -4 http://repeatmasker.org/RepeatModeler/RECON-1.08.tar.gz
+tar xf RECON-1.08.tar.gz
+cd RECON-1.08/src
+make && make install
+cd ~/src
+mv RECON-1.08 ~/opt/biosoft
+# nesg
+cd ~/src
+mkdir nesg && cd nesg
+wget -4 ftp://ftp.ncbi.nih.gov/pub/seg/nseg/*
+make
+mv nmerge nseg ~/opt/bin/
+# RepeatScout
+http://www.repeatmasker.org/RepeatScout-1.0.5.tar.gz
+# RepeatModel
+wget -4 http://repeatmasker.org/RepeatModeler/RepeatModeler-open-1.0.11.tar.gz
+tar xf RepeatModeler-open-1.0.11.tar.gz
+mv RepeatModeler-open-1.0.11 ~/opt/biosoft/
+cd ~/opt/biosoft/RepeatModeler-open-1.0.11
+# 配置
+perl ./configure
 export PATH=~/opt/biosoft/maker:$PATH
+```
+
+**BLAST**，BLAST有两个版本可供选择, WuBLAST或者NCBI-BLAST，我个人倾向于NCBI-BLAST，并且推荐使用编译后二进制版本，因为编译实在是太花时间了
+
+```bash
+cd ~/src
+wget ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/ncbi-blast-2.7.1+-x64-linux.tar.gz
+tar xf ncbi-blast-2.7.1+-x64-linux.tar.gz
+mv ncbi-blast-2.7.1+ ~/opt/biosoft
+# 环境变量
+export PATH=~/opt/biosoft/ncbi-blast-2.7.1+/bin:$PATH
+# 用于后续的BRAKER2
+conda create -n annotation blast=2.2.31
+```
+
+**AUGUSTUS**: 可以说是最好的预测软件，使用conda安装
+
+```bash
+source activate annotation
+conda install augustus=3.3
+```
+
+**GeneMark-ES/ET**则是唯一一款支持无监督训练模型, 软件下载需要登记
+
+```bash
+cd ~/src
+wget http://topaz.gatech.edu/GeneMark/tmp/GMtool_Qg87n/gm_et_linux_64.tar.gz
+tar xf gm_et_linux_64.tar.gz
+mv gm_et_linux_64/gmes_petap/ ~/opt/biosoft
+wget http://topaz.gatech.edu/GeneMark/tmp/GMtool_Qg87n/gm_key_64.gz
+gzip -dc gm_key_64.gz > ~/.gm_key
+cpan YAML Hash::Merge Logger::Simple Parallel::ForkManager
+echo "export PATH=$PATH:~/opt/biosoft/gmes_petap/" >> ~/.bashrc
 ```
 
 **Exonerate 2.2**: 配对序列比对工具，提供二进制版本, 功能类似于GeneWise，能够将cDNA或蛋白以gao align的方式和基因组序列联配。
@@ -267,17 +490,57 @@ tar xf exonerate-2.2.0-x86_64.tar.gz
 mv exonerate-2.2.0-x86_64 ~/opt/biosoft/exonerate-2.2.0
 # .bashrc添加环境变量
 export PATH=~/opt/biosoft/exonerate-2.2.0:$PATH
+# 或
+conda install -c bioconda exonerate
 ```
 
-安装MAKER本体
+**GenomeThreader 1.70**: 同源预测软件，1.7.0版本更新于2018年2月
 
 ```bash
+wget -4 http://genomethreader.org/distributions/gth-1.7.0-Linux_x86_64-64bit.tar.gz
+tar xf gth-1.7.0-Linux_x86_64-64bit.tar.gz -C ~/opt/biosoft
+# 修改.bashrc增加如下行
+export PATH=$PATH:$HOME/opt/biosoft/gth-1.7.0-Linux_x86_64-64bit/bin
+export BSSMDIR="$HOME/opt/biosoft/gth-1.7.0-Linux_x86_64-64bit/bin/bssm"
+export GTHATADIR="$HOME/opt/biosoft/gth-1.7.0-Linux_x86_64-64bit/bin/gthdata"
+```
+
+**SNAP**: 基因从头预测工具，最后一个版本是2013/11/29，效果还行，在处理含有长内含子上的基因组上表现欠佳
+
+```bash
+# 安装
 cd ~/src
-tar xf maker-2.31.9.tgz
-mv maker ~/opt/biosoft
-cd ~/opt/biosoft/maker/src
-perl Buidl.PL # 根据输出信息查漏补缺，选择是否使用MPI
-./Build install
-# 添加环境变量
-export PATH= ~/opt/biosoft/maker/bin:$PATH
+wget http://korflab.ucdavis.edu/Software/snap-2013-11-29.tar.gz
+tar xf snap-2013-11-29.tar.gz
+cd snap
+make
+cd ..
+mv snap ~/opt/biosoft
+# 环境变量
+export Zoe=~/opt/biosoft/snap/Zoe
+export PATH=~/opt/biosoft/snap:$PATH
+```
+
+**BRAKER2**: 依赖AUGUSTUS 3.3, GeneMark-EX 4.33, BAMTOOLS 2.5.1, NCBI BLAST+ 2.2.31+(可选 SAMTOOLS 1.74+, GenomeThreader 1.70)
+
+```bash
+cpan File::Spec::Functions Module::Load::Conditional POSIX Scalar::Util::Numeric YAML File::Which
+cd ~/src
+wget -4 http://exon.biology.gatech.edu/GeneMark/Braker/BRAKER2.tar.gz
+tar xf BRAKER2.tar.gz -C ~/opt/biosoft
+echo "export PATH=$PATH:$HOME/opt/biosoft/BRAKER_v2.1.0/" >> ~/.bashrc
+# 在~/.bashrc设置如下软件所在环境变量
+export AUGUSTUS_CONFIG_PATH=$HOME/miniconda3/envs/annotation/config/
+export AUGUSTUS_
+export AUGUSTUS_SCRIPTS_PATH=$HOME/miniconda3/envs/annotation/bin/
+export BAMTOOLS_PATH=$HOME/miniconda3/envs/annotation/bin/
+export GENEMARK_PATH=$HOME/opt/biosoft/gmes_petap/
+export SAMTOOLS_PATH=$HOME/miniconda3/envs/annotation/bin/
+export ALIGNMENT_TOOL_PATH=$HOME/opt/biosoft/gth-1.7.0-Linux_x86_64-64bit/bin/
+```
+
+MARKER: 使用conda安装会特别的方便，最好新建环境
+
+```bash
+conda create -n marker marker
 ```

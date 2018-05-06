@@ -126,6 +126,8 @@ ls raw-data/lib1/frag_*.fastq.gz > genome_survey/reads.list
 
 > 虽然也可以使用FindErrors对基因组进行评估，但是我实际使用时出现了各种问题，这里不做介绍。其他的工具也是大同小异，不做额外推荐。
 
+推荐文献: Genomic DNA k-mer spectra: models and modalities
+
 ## 基因组正式组装
 
 当你拿到测序数据后，就可以按照如下几步处理数据。第一步是**数据质控控制**，这一步对于组装而言非常重要，处理前和处理后的组装结果可能会天差地别；第二步，根据经验确定**起始参数**，如K-mer和覆盖率；第三步，使用不同软件进行组装；第四步，评估组装结果，如contig N50, scaffold N50, 判断是否需要修改参数重新组装。
@@ -239,7 +241,7 @@ N50定义比较绕口，有一种只可意会不可言传的感觉，所以索�
 
 ![N50和NG50](http://oex750gzt.bkt.clouddn.com/18-3-8/83625326.jpg)
 
-假设一个基因组的大小为10，但是这个值只有神知道，你得到的信息就是组装后有3个contig,长度分别为"3,4,1,1"，所以组装总长度为9。为了计算N50，我们需要先把contig从大到小排列，也就是"4,3,1"。然后先看最大的contig，长度是4，他的长度是不是超过组装总大小的一半了吗？如果是，那么N50=4, 4 < 4.5, 不是。 那么在此基础上加上第二长的contig,也就是4+3=7, 是不是超过一半了？7>4.5, 那么N50=3. 因此，N50的定义可以表述为"使得累加后长度超过组装总长度一半的contig的长度就是N50"。为了方便管理和使用软件，建议建立如下几个文件夹
+假设一个基因组的大小为10，但是这个值只有神知道，你得到的信息就是组装后有3个contig,长度分别为"3,4,1,1"，所以组装总长度为9。为了计算N50，我们需要先把contig从大到小排列，也就是"4,3,1"。然后先看最大的contig，长度是4，他的长度是不是超过组装总大小的一半了吗？如果是，那么N50=4, 4 < 4.5, 不是。 那么在此基础上加上第二长的contig,也就是4+3=7, 是不是超过一半了？7>4.5, 那么N50=3. 因此，N50的定义可以表述为"使得累加后长度超过组装总长度一半的contig的长度就是N50"。在N50的基础上还有一个L50, 即用来累加得到N50的contig数目, 例如这里的L50就是2.
 
 N50是基于一个未知的基因组得到得结果，如果基因组测序比较完整，那么就可以计算NG50，也就是"使得累加后长度超过基因组总长度一半的contig的长度就是NG50"。NA50比较稍微复杂，需要将组装结果进一步比对到参考基因组上，以contig实际和基因组匹配的长度进行排序计算。
 
@@ -255,6 +257,8 @@ quast.py -R ../genome/Saureus.fna -o compare idba_ud/contig.fa minia/minia.conti
 ```
 
 ![quast运行结果](http://oex750gzt.bkt.clouddn.com/18-3-8/47341406.jpg)
+
+> N50越大越好，L50越小越好。
 
 这个结果非常直观的告诉我们一个事实就是`spades`组装的contigs`各方面表现都很优秀，minia由于内存使用率最低，所以组装效果一般也是可以理解。
 
@@ -302,6 +306,7 @@ C值表示和BUSCO集相比的完整度，M值表示可能缺少的基因数，D
 - Bandage: <https://github.com/rrwick/Bandage/wiki>
 - QUAST: <http://quast.bioinf.spbau.ru/manual.html>
 - "AreWe There Yet? Reliably Estimating the Completeness of Plant Genome Sequences"
+- N50,L50,D50: <https://en.wikipedia.org/wiki/N50,_L50,_and_related_statistics>
 
 ### 软件安装
 
