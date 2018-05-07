@@ -65,7 +65,7 @@ GO注释使用[AHRD流程](https://github.com/groupschoof/AHRD/)
 
 以上，通过套路我们对整个基因组注释有一个大概的了解，后续就需要通过实际操作来理解细节。
 
-## 基因注释1,2,3
+## 基因组注释
 
 当我们谈到基因注释的时候，我们通常认为注释是指“对基因功能的描述”，比如说A基因在细胞的那个部分，通过招募B来调控C，从而引起病变。但是基因结构也是注释的一种形式，而且是先决条件，也就是在看似随机的ATCG的碱基排列中找到特殊的部分，而这些特殊的区域有着不一样的功能。
 
@@ -73,13 +73,13 @@ GO注释使用[AHRD流程](https://github.com/groupschoof/AHRD/)
 
 在正式启动基因组注释项目之前，需要先检查组装是否合格，比如contig N50的长度是否大于基因的平均长度，使用BUSCO/CEGMA检查基因的完整性，如果不满足要求，可能输出结果中大部分的contig中都不存在一个完整的基因结构。当组装得到的contig符合要求时，就可以开始基因组注释环节，这一步分为三步：基因结构预测，基因功能注释，可视化和质控。
 
-### 基因结构注释
+### 基因组结构注释
 
 基因结构注释应是功能注释的先决条件，完整的真核生物基因组注释流程需要如下步骤：
 
 1. 必要的基因组重复序列屏蔽
 2. 从头寻找基因, 可用工具为: GeneMarkHMM, FGENESH, Augustus, SNAP, GlimmerHMM, Genscan
-3. 同源蛋白预测, 内含子分析: GeneWIse, Exonerate
+3. 同源蛋白预测, 内含子分析: GeneWIse, Exonerate, GenomeThreader
 4. 将EST序列，全长cDNA序列和Trinity/Cufflinks/Stringtie组装的转录组和基因组联配
 5. 如果第4步用到了多个数据来源，使用PASA基于重叠情况进行联配
 6. 使用EvidenceModler根据上述结果进行整合
@@ -265,9 +265,9 @@ braker.pl --gff3 --cores 50 --species=carhr --genome=chi_unmasked.fa --bam=02-ba
 
 相对于从头预测的“大海捞针”，同源预测相当于先用一块磁铁在基因组大海中缩小了可能区域，然后从可能区域中鉴定基因结构。在10年之前，当时RNA-seq还没有普及, 只有少部分物种才有EST序列和cDNA序列的情况下，这的确是一个比较好的策略，那么问题来了，现在还需要进行这一步吗，如果需要是出于那种角度考虑呢?
 
-在同源预测上，目前看到的大部分基因组文章都是基于TBLASTN + GeneWise，这可能是因为大部分基因组文章都是国内做的，这些注释自然而言用的就是公司的流程，然后目前国内的公司大多数又和某一家公司有一些关系。不过最近的3010水稻泛基因组用的是MAKER, 感谢部分提到这部分工作是由M. Roa(Philippine Genome Center Core Facilities for Bioinformatics, Department of Science)做的，算是一股清流吧。当然我在看Cardamine hirsuta基因组注释问斩，发现它们同源注释部分用的是GenomeThreader, 该工具在本篇文章成文时的3月之前又更新了。
+在同源预测上，目前看到的大部分基因组文章都是基于TBLASTN + GeneWise，这可能是因为大部分基因组文章都是国内做的，这些注释自然而言用的就是公司的流程，然后目前国内的公司大多数又和某一家公司有一些关系。不过最近的3010水稻泛基因组用的是MAKER, 感谢部分提到这部分工作是由M. Roa(Philippine Genome Center Core Facilities for Bioinformatics, Department of Science)做的，算是一股清流吧。当然我在看Cardamine hirsuta基因组注释文章，发现它们同源注释部分用的是GenomeThreader, 该工具在本篇文章成文时的3月之前又更新了。
 
-GeneWise的网站说它目前由Ewan Birney维护，只不过不继续开发了，因为Guy Slater开发Exonerate解决了GeneWise存在的很多问题，并且速度快了1000倍。考虑到目前只有GeneWise能利用HMM根据蛋白找DNA，而且ENSEMBL的注释流程也有一些核心模块用到了它，所以作者依旧在缓慢的开发这个工具(自2.4.1已经10多年没有更新了)，当然这个具也是非常的慢。尽管这一步不会用到GeneWise作为我们的同源注释选项，但是我们可以尝试用GeneWise手工注释一个基因，主要步骤如下
+GeneWise的网站说它目前由Ewan Birney维护，只不过不继续开发了，因为Guy Slater开发Exonerate解决了GeneWise存在的很多问题，并且速度快了1000倍。考虑到目前只有GeneWise能利用HMM根据蛋白找DNA，而且ENSEMBL的注释流程也有一些核心模块用到了它，所以作者依旧在缓慢的开发这个工具(自2.4.1已经10多年没有更新了)，当然这个工具也是非常的慢。尽管这一步不会用到GeneWise作为我们的同源注释选项，但是我们可以尝试用GeneWise手工注释一个基因，主要步骤如下
 
 - 第一步： 使用BLASTX，根据dna序列搜索到蛋白序列，只需要第一个最佳比对结果
 - 第二步： 选择最佳比对的氨基酸序列
@@ -289,7 +289,9 @@ seqkit faidx chi_unmasked.fa Chr1:1-5000 > chr1_5k.fa
 
 ![预测结果](http://oex750gzt.bkt.clouddn.com/18-5-4/54073337.jpg)
 
-让我们跳过这个尴尬的环节，毕竟很可能是我不太熟练使用工作所致。还是用GenomeThreader基于上面的DNA序列和氨基酸序列进行同源基因结构预测吧
+让我们跳过这个尴尬的环节，毕竟很可能是我不太熟练使用工作所致。这里说点我的看法，除非你真的没有转录组数据，必须要用到同源物种的蛋白进行预测，或者你手动处理几个基因，否则不建议使用这个工具，因为你可能连安装都搞不定。
+
+让我们用GenomeThreader基于上面的DNA序列和氨基酸序列进行同源基因结构预测吧
 
 ```bash
 gth -genomic chr1_5k.fa -protein cer.fa -intermediate -gff3out
@@ -313,22 +315,126 @@ Chr1	gth	exon	4676	4735	Parent=gene1	Chr1    MIPS_CARH_v3.8  exon    4676    473
 
 全基因组范围预测流程如下：
 
-首先从<https://phytozome.jgi.doe.gov/pz/portal.html>或者其他比较靠谱的地方下载靠谱的同源物种的蛋白序列，从不同基因组文章的同源注释来看，目前比较靠谱的物种有
+准备cDNA和或protein序列：在<https://phytozome.jgi.doe.gov/p>下载靠谱的物种的蛋白质序列，如 _Arabidopsis thaliana_, _Oryza sativa_, _Brassica rapa_, 查找文献寻找目前该物种的已有EST/cDNA序列，或者RNA-seq从头组装转录组。这里仅考虑用同源物种的蛋白序列进行比对分析，转录组从头组装数据用于PASA整体比对到参考基因组和更新已有的基因解雇。
 
-- _Arabidopsis thaliana_
-- _Oryza sativa_
-- A. lyrata
-Brassica oleracea
-B. rapa
-C. rubella
-Panicum virgatum
-Thellungiella haplophila
+分别测试下不同物种的同源注释结果
 
-#### 整合预测结果
+```bash
+#run seperately
+gth -species arabidopsis -translationtable 1 -gff3 -intermediate -protein ~/db/protein_db/Athaliana_167_TAIR10.protein.fa.gz -genomic chi_unmasked.fa -o 03-genomethreader/Athaliana.gff3 &
+gth -species arabidopsis -translationtable 1 -gff3 -intermediate -protein ~/db/protein_db/BrapaFPsc_277_v1.3.protein.fa.gz -genomic chi_unmasked.fa -o 03-genomethreader/Brapa.gff3 &
+gth -species arabidopsis -translationtable 1 -gff3 -intermediate -protein ~/db/protein_db/Osativa_323_v7.0.protein.fa.gz -genomic chi_unmasked.fa -o 03-genomethreader/Osativa.gff3 &
+```
 
-## 功能注释
+在定性角度上来看，同源注释的结果和从头预测的没啥差别, 其中B. rapa和A. thaliana和C. hirsuta都属于十字花科，而O. sativa是禾本科, 所以前两者预测的效果好。
 
-基因结构预测和基因注释是不同的概念。前者通过计算方式，以从头预测、同源比对的方式得到**可能**的基因结构，相当于收集线索。后者是基于前者收集的线索进行梳理，最终确定“最可能”的模型。这一点告诉我们，面对非模式植物的注释时，一定要谨慎，不要盲目使用。也就是说我们需要通过进一步通过可视化的方式，抽样或者挑选自己的目标基因进行检查，因为从某种程度上，人类模式识别能力还是最一流的。
+![IGV展示](http://oex750gzt.bkt.clouddn.com/18-5-6/50163517.jpg)
+
+当然实际的同源注释流程中不能是单个物种分别预测，应该是将所有的蛋白序列进行合并，然后用BLASTX找到最优的联配，之后用GenomeThreader进行预测。PASA流程提到的**UniRef90**作为同源注释的搜索数据库可能是更好的选择，由于UniRef优先选择哪些人工审查、注释质量高、来源于模式动植物的蛋白，所以可靠性相对于直接使用同源物中可能更高。
+
+> BLASTX + GenomeThreader的代码探索中
+
+#### 04-整合转录组或cDNA/EST
+
+在多年以前，那个基因组组装还没有白菜价，只有几个模式物种基因组的时代，对于一个未测序的基因组，研究者如果要研究某一个基因的功能，大多会通过同源物种相似基因设计PCR引物，然后去扩增cDNA. 如果是一个已知基因组的物种，如果要大规模识别基因, 研究者通常会使用EST(expressed sequence tags)序列。
+
+相对于基于算法的从头预测，cDNA和EST序列更能够真实的反应出一个基因的真实结构，如可变剪切、UTR和Poly-A位点。PASA(Progam to Assemble Spliced Alignments)流程最早用于拟南芥基因组注释，最初的设计是通过将全长(full-length)cDNA和EST比对到参考基因组上，去发现和更新基因组注释。其中FL-cDNA和EST序列对最后结果的权重不同。
+
+![PASA流程示意](http://oex750gzt.bkt.clouddn.com/18-5-7/59539422.jpg)
+
+这是以前的故事，现在的故事是二代转录组以及一些三代转录组数据，那么如何处理这些数据呢？我认为三代转录组相对于过去的FL-cDNA，而二代转录组数据经过拼接后可以看作是更长的EST序列。由于目前最普及的还是普通的mRNA-seq, 也就只介绍这部分流程。
+
+>考虑到我还没有研究过三代的全长转录组，分析过数据，这里的思考极有可能出错，后续可能会修改这一部分思考。
+
+转录组组装使用Trinity(conda安装)
+
+```bash
+cd rna-seq
+Trinity --seqType fq --CPU 50 --max_memory 64G --left leaf_ox_r1_1.fastq.gz,ox_flower16_rep1_1.fastq.gz,ox_flower9_rep1_1.fastq.gz --right leaf_ox_r1_2.fastq.gz,ox_flower16_rep1_2.fastq.gz,ox_flower9_rep1_2.fastq.gz &
+```
+
+PASA是由30多个命令组成的流程，相关命令位于`PASApipeline/scripts`，为了适应不同的分析，有些参数需要通过修改配置文件更改,
+
+```bash
+cp ~/opt/biosoft/PASApipeline/pasa_conf/pasa.alignAssembly.Template.txt alignAssembly.config
+# 修改如下内容
+DATABASE=database.sqlite
+validate_alignments_in_db.dbi:--MIN_PERCENT_ALIGNED=80
+validate_alignments_in_db.dbi:--MIN_AVG_PER_ID=9
+```
+
+上述几行配置文件表明SQLite3数据库的名字，设置了`scripts/validate_alignments_in_db.dbi`的几个参数。后续以Trinity组装结果和参考基因组作为输入，运行程序：
+
+```bash
+~/opt/biosoft/PASApipeline/scripts/Launch_PASA_pipeline.pl -c alignAssembly.config -C -R -g ../chi_unmasked.fa -t ../rna-seq/trinity_out_dir/Trinity.fasta --ALIGNERS blat,gmap
+```
+
+最后结果如下：
+
+- database.sqlite.pasa_assemblies_described.txt
+- database.sqlite.pasa_assemblies.gff3
+- database.sqlite.pasa_assemblies.gtf
+- database.sqlite.pasa_assemblies.bed
+
+其中gff3格式用于后续的分析。
+
+#### 05-整合预测结果
+
+从头预测，同源注释和转录组整合都会得到一个预测结果，相当于收集了大量证据，下一步就是通过这些证据定义出更加可靠的基因结构，这一步可以通过人工排查，也可以使用EVidenceModeler(EVM). EVM只接受三类输入文件：
+
+- `gene_prediction.gff3`: 标准的GFF3格式，必须要有gene, mRNA, exon, CDS这些特征，用`EVidenceModeler-1.1.1/EvmUtils/gff3_gene_prediction_file_validator.pl`验证
+- `protein_alignments.gff3`: 标准的GFF3格式，第9列要有ID信和和target信息, 标明是比对结果
+- `transcript_alignments.gff3`:标准的GFF3格式，第9列要有ID信和和target信息，标明是比对结果
+
+这三类根据人为经验来确定其可信度，从直觉上就是用PASA根据mRNA得到的结果高于从头预测。
+
+第一步：创建权重文件,第一列是来源类型(ABINITIO_PREDICTION, PROTEIN, TRANSCRIPT), 第二列对应着GFF3文件的第二列，第三列则是权重.我这里就用了两个来源的数据。
+
+```bash
+mkdir 05-EVM && cd 05-EVM
+#vim weights.txt
+ABINITIO_PREDICTION      augustus       4
+TRANSCRIPT      assembler-database.sqlite      10
+```
+
+第二步：分割原始数据, 用于后续并行. 为了降低内存消耗，--segmentsSize设置的大小需要少于1Mb， --overlapSize的不能太小，如果数学好，可用设置成基因平均长度加上2个标准差，数学不好，就设置成10K吧
+
+```bash
+ln ../braker/carhr/augustus.hints.gff3 gene_predictions.gff3
+ln ../04-align-transcript/database.sqlite.pasa_assemblies.gff3 transcript_alignments.gff3
+~/opt/biosoft/EVidenceModeler-1.1.1/EvmUtils/partition_EVM_inputs.pl --genome ../chi_unmasked.fa --gene_predictions gene_predictions.gff3 --transcript_alignments transcript_alignments.gff3 --segmentSize 100000 --overlapSize 10000 --partition_listing partitions_list.out
+```
+
+第三步：创建并行运算命令并且执行
+
+```bash
+~/opt/biosoft/EVidenceModeler-1.1.1/EvmUtils/write_EVM_commands.pl --genome ../chi_unmasked.fa --weights `pwd`/weights.txt \
+      --gene_predictions gene_predictions.gff3 \
+      --transcript_alignments transcript_alignments.gff3 \
+      --output_file_name evm.out  --partitions partitions_list.out >  commands.list
+parallel --jobs 10 < commands.list
+```
+
+第四步：合并并行结果
+
+```bash
+~/opt/biosoft/EVidenceModeler-1.1.1/EvmUtils/recombine_EVM_partial_outputs.pl --partitions partitions_list.out --output_file_name evm.out
+```
+
+第五步：结果转换成GFF3
+
+```bash
+~/opt/biosoft/EVidenceModeler-1.1.1/EvmUtils/convert_EVM_outputs_to_GFF3.pl  --partitions partitions_list.out --output evm.out  --genome ../chi_unmasked.fa
+find . -regex ".*evm.out.gff3" -exec cat {} \; | bedtools sort -i - > EVM.all.gff
+```
+
+当前权重设置下，EVM的结果更加严格，需要按照实际情况调整，增加其他证据。
+
+#### 06-使用PASA更新EVM结果
+
+EVM结果不包括UTR区域和可变剪切的注释信息，可以使用PASA进行更新。然而这部分已经无法逃避MySQL, 服务器上并没有MySQL的权限，我需要学习Perl脚本进行修改。因此基因结构注释到此先放一放。
+
+### 基因功能注释
 
 - IPR, Pfam: interproscan
 - GO: interproscan
@@ -350,6 +456,7 @@ Thellungiella haplophila
   - GeneWise
   - Exonerate
   - Trinity
+  - GenomeThreader
 - 注释合并
   - GLEAN：已经落伍于时代了
   - EvidenceModeler： 与时俱进
@@ -357,6 +464,7 @@ Thellungiella haplophila
   - PASA：真核生物基因的转录本可变剪切自动化注释项目，需要提供物种的EST或RNA-seq数据
   - MAKER
   - BRAKER1: 使用GeneMark-ET和AUGUSTUS基于RNA-Seq注释基因结构
+  - EuGene
 - 可视化
   - IGV
   - JBrowse/GBrowse
@@ -539,8 +647,46 @@ export SAMTOOLS_PATH=$HOME/miniconda3/envs/annotation/bin/
 export ALIGNMENT_TOOL_PATH=$HOME/opt/biosoft/gth-1.7.0-Linux_x86_64-64bit/bin/
 ```
 
-MARKER: 使用conda安装会特别的方便，最好新建环境
+**MARKER**: 使用conda安装会特别的方便，最好新建环境
 
 ```bash
 conda create -n marker marker
+```
+
+**PASA**: 依赖于一个数据库(MySQL或SQLite), Perl模块(DBD::mysql或DBD::SQLite), GMAP, BLAT, Fasta3。由于MySQL在HPC集群中的表现不如SQLite，以及安装MySQL还需要各种管理员权限，于是就有人进行了修改，增加了feature/sqlite分支, 见[Add support for SQLite](https://github.com/PASApipeline/PASApipeline/pull/43)
+
+```bash
+cpan DB_File URI::Escape DBI DBD::SQLite
+# GMAP
+wget http://research-pub.gene.com/gmap/src/gmap-gsnap-2017-11-15.tar.gz
+tar xf gmap-gsnap-2017-11-15.tar.gz
+cd gmap-2017-11-15
+./configure --prefix=$HOME/opt/gmap
+make && make install
+# BLAT
+cd ~/opt/bin
+wget http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/blat/blat && chmod 755 ./blat
+# Fasta3
+wget -4 http://faculty.virginia.edu/wrpearson/fasta/fasta36/fasta-36.3.8g.tar.gz && \
+        tar zxvf fasta-36.3.8g.tar.gz && \
+        cd ./fasta-36.3.8g/src && \
+        make -f ../make/Makefile.linux_sse2 all && \
+        cp ../bin/fasta36 ~/opt/bin
+# 以上程序需添加到环境变量中
+# PASApipeline
+cd ~/opt/biosoft
+git clone https://github.com/PASApipeline/PASApipeline.git
+cd PASApipeline && \
+git checkout feature/sqlite && \
+git submodule init && git submodule update && \
+make
+```
+
+**EVidenceModeler**: 整合不同来源的注释结果，找到可靠的基因结构
+
+```bash
+cd ~/src
+wget -4 https://github.com/EVidenceModeler/EVidenceModeler/archive/v1.1.1.tar.gz
+tar xf v1.1.1.tar.gz
+mv EVidenceModeler-1.1.1 ~/opt/biosoft/
 ```
