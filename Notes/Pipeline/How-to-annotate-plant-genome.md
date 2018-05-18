@@ -334,7 +334,44 @@ gth -species arabidopsis -translationtable 1 -gff3 -intermediate -protein ~/db/p
 
 > BLASTX + GenomeThreader的代码探索中
 
-#### 04-整合转录组或cDNA/EST
+#### 04-RNA-seq的两种使用策略
+
+对于RNA-seq数据，有两种使用策略，一种是使用HISAT2 + StringTie先比对再组装, 一种是从头组装，然后使用PASA将转录本比对到基因组上。
+
+##### 基于HISAT2 + StringTie
+
+首先，使用HISAT2将RNA-seq数据比对到参考基因组, 这一步和之前相似，但是要增加一个参数`--dta`，使得StingTie能更好的利用双端信息
+
+```bash
+hisat2-build 01-augustus/genome.fa index/chi_masked
+hisat2 --dta -p 20 -x index/chi_masked -1 rna-seq/leaf_ox_r1_1.fastq.gz -2 rna-seq/leaf_ox_r1_2.fastq.gz | samtools sort -@ 10 > rna-seq/leaf_ox_r1.bam &
+hisat2 --dta -p 20 -x index/chi_masked -1 rna-seq/ox_flower9_rep1_1.fastq.gz -2 rna-seq/ox_flower9_rep1_2.fastq.gz | samtools sort -@ 10 > rna-seq/ox_flower9.bam &
+hisat2 --dta -p 20 -x index/chi_masked -1 rna-seq/ox_flower16_rep1_1.fastq.gz -2 rna-seq/ox_flower16_rep1_2.fastq.gz | samtools sort -@ 10 > rna-seq/ox_flower16.bam &
+samtools merge -@ 10 rna-seq/merged.bam rna-seq/leaf_ox_r1.bam rna-seq/ox_flower9.bam rna-seq/ox_flower16.bam
+```
+
+然后用StringTie进行转录本预测
+
+```bash
+stringtie -p 10 -o rna-seq/merged.gtf rna-seq/merged.bam
+```
+
+对于后续的EvidenceModeler而言，它不需要UTR信息，只需要编码区CDS，需要用TransDecoder进行编码区预测
+
+```bash
+util/cufflinks_gtf_genome_to_cdna_fasta.pl merged.gtf input/chi_masked.fa > transcripts.fasta
+util/cufflinks_gtf_to_alignment_gff3.pl merged.gtf > transcripts.gff3
+TransDecoder.LongOrfs -t transcripts.fasta
+TransDecoder.Predict -t transcripts.fasta
+util/cdna_alignment_orf_to_genome_orf.pl \
+     transcripts.fasta.transdecoder.gff3 \
+     transcripts.gff3 \
+     transcripts.fasta > transcripts.fasta.transdecoder.genome.gff3
+```
+
+最后结果`transcripts.fasta.transdecoder.gff3`用于提供给EvidenceModeler
+
+##### 基于PASA
 
 在多年以前，那个基因组组装还没有白菜价，只有几个模式物种基因组的时代，对于一个未测序的基因组，研究者如果要研究某一个基因的功能，大多会通过同源物种相似基因设计PCR引物，然后去扩增cDNA. 如果是一个已知基因组的物种，如果要大规模识别基因, 研究者通常会使用EST(expressed sequence tags)序列。
 
@@ -360,10 +397,10 @@ cp ~/opt/biosoft/PASApipeline/pasa_conf/pasa.alignAssembly.Template.txt alignAss
 # 修改如下内容
 DATABASE=database.sqlite
 validate_alignments_in_db.dbi:--MIN_PERCENT_ALIGNED=80
-validate_alignments_in_db.dbi:--MIN_AVG_PER_ID=9
+validate_alignments_in_db.dbi:--MIN_AVG_PER_ID=80
 ```
 
-上述几行配置文件表明SQLite3数据库的名字，设置了`scripts/validate_alignments_in_db.dbi`的几个参数。后续以Trinity组装结果和参考基因组作为输入，运行程序：
+上述几行配置文件表明SQLite3数据库的名字，设置了`scripts/validate_alignments_in_db.dbi`的几个参数, 表示联配程度和相似程度。后续以Trinity组装结果和参考基因组作为输入，运行程序：
 
 ```bash
 ~/opt/biosoft/PASApipeline/scripts/Launch_PASA_pipeline.pl -c alignAssembly.config -C -R -g ../chi_unmasked.fa -t ../rna-seq/trinity_out_dir/Trinity.fasta --ALIGNERS blat,gmap
@@ -378,6 +415,8 @@ validate_alignments_in_db.dbi:--MIN_AVG_PER_ID=9
 
 其中gff3格式用于后续的分析。
 
+> 目前的一些想法， 将从头组装的转录本比对到参考基因组上很大依赖组装结果，所以和EST序列和cDNA相比，质量上还有一点差距。
+
 #### 05-整合预测结果
 
 从头预测，同源注释和转录组整合都会得到一个预测结果，相当于收集了大量证据，下一步就是通过这些证据定义出更加可靠的基因结构，这一步可以通过人工排查，也可以使用EVidenceModeler(EVM). EVM只接受三类输入文件：
@@ -386,21 +425,26 @@ validate_alignments_in_db.dbi:--MIN_AVG_PER_ID=9
 - `protein_alignments.gff3`: 标准的GFF3格式，第9列要有ID信和和target信息, 标明是比对结果
 - `transcript_alignments.gff3`:标准的GFF3格式，第9列要有ID信和和target信息，标明是比对结果
 
+EVM对`gene_prediction.gff3`有特殊的要求，就是GFF文件需要反映出一个基因的结构，gene->(mRNA -> (exon->cds(?))(+))(+), 表示一个基因可以有多个mRNA，即基因的可变剪接, 一个mRNA都可以由一个或者多个exon(外显子), 外显子可以是非翻译区(UTR),也可以是编码区(CDS). 而GlimmerHMM, SNAP等
+
 这三类根据人为经验来确定其可信度，从直觉上就是用PASA根据mRNA得到的结果高于从头预测。
 
-第一步：创建权重文件,第一列是来源类型(ABINITIO_PREDICTION, PROTEIN, TRANSCRIPT), 第二列对应着GFF3文件的第二列，第三列则是权重.我这里就用了两个来源的数据。
+第一步：创建权重文件,第一列是来源类型(ABINITIO_PREDICTION, PROTEIN, TRANSCRIPT), 第二列对应着GFF3文件的第二列，第三列则是权重.我这里用了**三**个来源的数据。
 
 ```bash
 mkdir 05-EVM && cd 05-EVM
 #vim weights.txt
 ABINITIO_PREDICTION      augustus       4
-TRANSCRIPT      assembler-database.sqlite      10
+TRANSCRIPT      assembler-database.sqlite      7
+OTHER_PREDICTION  transdecoder  8
 ```
 
-第二步：分割原始数据, 用于后续并行. 为了降低内存消耗，--segmentsSize设置的大小需要少于1Mb， --overlapSize的不能太小，如果数学好，可用设置成基因平均长度加上2个标准差，数学不好，就设置成10K吧
+> 我觉得根据基因组引导组装的ORF的可信度高于组装后比对，所以得分和PASA差不多一样高。从头预测权重一般都是1，但是BRAKER可信度稍微高一点，可以在2~5之间。
+
+第二步：分割原始数据, 用于后续并行. 为了降低内存消耗，--segmentsSize设置的大小需要少于1Mb(这里是100k)， --overlapSize的不能太小，如果数学好，可用设置成基因平均长度加上2个标准差，数学不好，就设置成10K吧
 
 ```bash
-ln ../braker/carhr/augustus.hints.gff3 gene_predictions.gff3
+cat transcripts.fasta.transdecoder.genome.gff3 ../braker/carhr/augustus.hints.gff3 > gene_predictions.gff3
 ln ../04-align-transcript/database.sqlite.pasa_assemblies.gff3 transcript_alignments.gff3
 ~/opt/biosoft/EVidenceModeler-1.1.1/EvmUtils/partition_EVM_inputs.pl --genome ../chi_unmasked.fa --gene_predictions gene_predictions.gff3 --transcript_alignments transcript_alignments.gff3 --segmentSize 100000 --overlapSize 10000 --partition_listing partitions_list.out
 ```
@@ -430,16 +474,28 @@ find . -regex ".*evm.out.gff3" -exec cat {} \; | bedtools sort -i - > EVM.all.gf
 
 当前权重设置下，EVM的结果更加严格，需要按照实际情况调整，增加其他证据。
 
-#### 06-使用PASA更新EVM结果
+#### 07-使用PASA更新EVM结果
 
 EVM结果不包括UTR区域和可变剪切的注释信息，可以使用PASA进行更新。然而这部分已经无法逃避MySQL, 服务器上并没有MySQL的权限，我需要学习Perl脚本进行修改。因此基因结构注释到此先放一放。
 
+#### 08-注释优化
+
+对于初步预测得到的基因，还可以稍微优化一下，例如剔除编码少于50个AA的预测结果，将转座子单独放到一个文件中(基于TransposonPSI)。
+
+最后可以将平均的转录本长度，平均CDS长度和平均每个基因的外显子数目统计到一个表格中。
+
+#### 一些经验
+
+如果有转录组数据，没必须要使用太多的从头预测工具，braker2 加 GlimmerHMM可能就够用了, 更多是使用PASA和
+
 ### 基因功能注释
 
+基因功能的注释依赖于上一步的基因结构预测，根据预测结果从基因组上提取CDS序列和主流的数据库进行比对，完成功能注释。数据库主要有以下几种：
+
+- Uniprot
+- KEGG: KAAS
 - IPR, Pfam: interproscan
 - GO: interproscan
-- KEGG: 本地BLAST
-- uniport: 本地BLAST
 
 ## 附录
 
@@ -561,8 +617,7 @@ export PATH=~/opt/biosoft/maker:$PATH
 ```bash
 cd ~/src
 wget ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/ncbi-blast-2.7.1+-x64-linux.tar.gz
-tar xf ncbi-blast-2.7.1+-x64-linux.tar.gz
-mv ncbi-blast-2.7.1+ ~/opt/biosoft
+tar xf ncbi-blast-2.7.1+-x64-linux.tar.gz -C ~/opt/biosoft
 # 环境变量
 export PATH=~/opt/biosoft/ncbi-blast-2.7.1+/bin:$PATH
 # 用于后续的BRAKER2
@@ -589,7 +644,30 @@ cpan YAML Hash::Merge Logger::Simple Parallel::ForkManager
 echo "export PATH=$PATH:~/opt/biosoft/gmes_petap/" >> ~/.bashrc
 ```
 
-**Exonerate 2.2**: 配对序列比对工具，提供二进制版本, 功能类似于GeneWise，能够将cDNA或蛋白以gao align的方式和基因组序列联配。
+**GlimmerHMM**:
+
+```bash
+cd ~/src
+wget -4 ftp://ccb.jhu.edu/pub/software/glimmerhmm/GlimmerHMM-3.0.4.tar.gz
+tar xf GlimmerHMM-3.0.4.tar.gz -C ~/opt/biosoft
+```
+
+**SNAP**: 基因从头预测工具，在处理含有长内含子上的基因组上表现欠佳
+
+```bash
+# 安装
+cd ~/src
+git clone https://github.com/KorfLab/SNAP.git
+cd SNP
+make
+cd ..
+mv SNAP ~/opt/biosoft
+# 环境变量
+export Zoe=~/opt/biosoft/SNAP/Zoe
+export PATH=~/opt/biosoft/SNAP:$PATH
+```
+
+**Exnerate 2.2**: 配对序列比对工具，提供二进制版本, 功能类似于GeneWise，能够将cDNA或蛋白以gao align的方式和基因组序列联配。
 
 ```bash
 cd ~/src
@@ -613,38 +691,32 @@ export BSSMDIR="$HOME/opt/biosoft/gth-1.7.0-Linux_x86_64-64bit/bin/bssm"
 export GTHATADIR="$HOME/opt/biosoft/gth-1.7.0-Linux_x86_64-64bit/bin/gthdata"
 ```
 
-**SNAP**: 基因从头预测工具，最后一个版本是2013/11/29，效果还行，在处理含有长内含子上的基因组上表现欠佳
-
-```bash
-# 安装
-cd ~/src
-wget http://korflab.ucdavis.edu/Software/snap-2013-11-29.tar.gz
-tar xf snap-2013-11-29.tar.gz
-cd snap
-make
-cd ..
-mv snap ~/opt/biosoft
-# 环境变量
-export Zoe=~/opt/biosoft/snap/Zoe
-export PATH=~/opt/biosoft/snap:$PATH
-```
-
 **BRAKER2**: 依赖AUGUSTUS 3.3, GeneMark-EX 4.33, BAMTOOLS 2.5.1, NCBI BLAST+ 2.2.31+(可选 SAMTOOLS 1.74+, GenomeThreader 1.70)
 
 ```bash
-cpan File::Spec::Functions Module::Load::Conditional POSIX Scalar::Util::Numeric YAML File::Which
+cpan File::Spec::Functions Module::Load::Conditional POSIX Scalar::Util::Numeric YAML File::Which Logger::Simple Parallel::ForkManager
 cd ~/src
 wget -4 http://exon.biology.gatech.edu/GeneMark/Braker/BRAKER2.tar.gz
 tar xf BRAKER2.tar.gz -C ~/opt/biosoft
 echo "export PATH=$PATH:$HOME/opt/biosoft/BRAKER_v2.1.0/" >> ~/.bashrc
 # 在~/.bashrc设置如下软件所在环境变量
 export AUGUSTUS_CONFIG_PATH=$HOME/miniconda3/envs/annotation/config/
-export AUGUSTUS_
 export AUGUSTUS_SCRIPTS_PATH=$HOME/miniconda3/envs/annotation/bin/
 export BAMTOOLS_PATH=$HOME/miniconda3/envs/annotation/bin/
 export GENEMARK_PATH=$HOME/opt/biosoft/gmes_petap/
 export SAMTOOLS_PATH=$HOME/miniconda3/envs/annotation/bin/
 export ALIGNMENT_TOOL_PATH=$HOME/opt/biosoft/gth-1.7.0-Linux_x86_64-64bit/bin/
+```
+
+**TransDecoder** 编码区域预测工具，需要预先安装NCBI-BLAST
+
+```bash
+cpan URI::Escape
+cd ~/src
+wget -4 https://github.com/TransDecoder/TransDecoder/archive/TransDecoder-v5.3.0.zip
+unzip TransDecoder-v5.3.0.zip
+cd TransDecoder-v5.3.0
+make test
 ```
 
 **MARKER**: 使用conda安装会特别的方便，最好新建环境

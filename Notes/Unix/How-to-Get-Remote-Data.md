@@ -42,6 +42,25 @@ curl 'https://signon.jgi.doe.gov/signon/create' --data-urlencode 'login=USER_NAM
 curl 'https://genome.jgi.doe.gov/portal/ext-api/downloads/get-directory?organism=PhytozomeV10' -b cookies > files.xml
 ```
 
+## 从GEO上下载数据
+
+GEO是用来保存芯片数据、高通量测序数据和其他高通量基因组学数据的平台，提供下载数据、上传数据和数据查询和分析服务，这里主要关注如何利用GEO下载数据。
+
+GEO是数据按照三种方式归档，平台(GPLxxx), 样本(GSMxxx)和系列(GSExxx)。文章中最常出现的形式是GSExxx, 例如GSE101571, 归档了文章中所有实验用到的数据的编号。我们的目的是从这个标号查询可供下载的形式。
+
+GSE101571的查询地址在<https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE101571>，网页主要是方便人类阅读，爬取则依赖更加规则化的文本
+
+![归档](http://oex750gzt.bkt.clouddn.com/18-5-7/32056722.jpg)
+
+- SOFT: Simple Omnibus in Text Format
+- MINiML: MIAME Notation in Markup Language, pronunced minimal, 一类XML扩展用于渲染SOFT
+
+从SOFT的下载链接<ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE101nnn/GSE101571/soft/GSE101571_family.soft.gz>，可以找到规则的命名格式，
+
+找到里面的SRX，然后基于SRX用E-Utils找SRR编号<https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=sra&term=SRX3884851>
+
+<https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=sra&id=5337710>
+
 ## 使用Aspera服务下载数据
 
 ```bash

@@ -1,5 +1,13 @@
 # Pysam学习笔记
 
+## 操作Fasta文件
+
+Pysam的`FastaFiles`和samtools faidx类似，能够随机读取给定区域的序列，因此如果需要逐行对fasta文件进行操作，那么你可能认错人了。
+
+```bash
+
+```
+
 ## 操作VCF/BCF文件
 
 读取和写出
