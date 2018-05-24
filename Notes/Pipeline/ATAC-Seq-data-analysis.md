@@ -6,6 +6,16 @@ notebook: 分析流程
 ---
 # ATAC-Seq 数据分析
 
+## 课程要求
+
+1. 目前生信培训很多，但是还没有ATAC-seq相关的教程，如果有，你这是第一篇，以后你就是个有作品的男人了，那么这个课程中应当融入你的生信理念。
+1. 这个课程应当是个从零到1的课程，希望你能清空你已经安装的相关生信软件，从找数据，下载数据，安装软件，完全反映出一个生信工作者工作的流程，其中安装软件部分，希望能够融入你准备的软件安装技能，比如conda安装时如何避免Jimmy说的环境污染的问题。
+1. 既然你也擅长Linux，那么其中应当有一节讲述linux 的基本技能，或者shell 编程，你也可以选择在处理数据时演示出来。
+1. 在课程开始的时候，要讲解ATAC的原理，以及我们要处理的这个数据的来龙去脉（我会阅读文献，帮助处理），要讲解ATAC的应用前景，这个可以参考嘉因生物。
+1. 简单说来，希望这是一个实时演示的过程，数据如何下载，每个软件的安装，最好的情况时，一个完全不懂的孩子被讲懂了。
+1. 在正文讲完了之后，希望能够演示一下，如何用网页工具或者现成的pipeline来处理数据，网页工具就是你发过的类似的ATAC的帖子，现成的pipeline就是ezATAC那个包。我们希望能够用不同的方法得出相同的结果，如果结果不一样，希望你能给出解释，并且给大家上一课。
+1. 在这篇文章处理完了之后，我们就开始上线课程。那么过一段时间之后，我们在后面更新别的数据集的处理方法，一来算是实战复习，而是增加卖点。我们说了的哈，这是你的正式作品，应当认真对待。
+
 ## 背景： 染色质和染色体的结构和功能
 
 每一条染色单体由单个线性DNA分子组成。细胞核中的DNA是经过高度有序的包装，否则就是一团乱麻，不利于DNA复制和表达调控。这种有序的状态才能保证基因组的复制和**表达调控**能准确和高效进行。
@@ -20,54 +30,59 @@ notebook: 分析流程
 
 ![核小体](http://oex750gzt.bkt.clouddn.com/17-12-15/86776671.jpg)
 
-染色质结构改变会发生在与转录起始相关或与DNA的某种结构特征相关的特定位点。当染色质用**DNA酶I(DNase)**消化时，第一个效果就是在双链体中特定的**超敏位点(hypersenitive site)**引入缺口，这种敏感性可以反应染色质中DNA的可及性(accessible)，也就是说这些是染色质中DNA由于未组装成通常核小体结构而特别暴露出的结构。
+染色质结构改变会发生在与转录起始相关或与DNA的某种结构特征相关的特定位点。当染色质用**DNA酶I(DNase)**消化时，第一个效果就是在双链体中特定的**超敏位点(hypersenitive site)**引入缺口，这种敏感性可以反应染色质中DNA的可接近性(accessible)，也就是说这些是染色质中DNA由于未组装成通常核小体结构而特别暴露出的结构。
 
 > 许多超敏位点与基因表达有关。每个活性基因在启动子区域都存在一个超敏位点。大部分超敏位点仅存在于相关基因正在被表达的或正在准备表达的细胞染色中；基因表达不活跃时他们则不出现。
 
-## 染色质开放区域和ATAC-Seq
+## 染色质开放区域和ATAC-seq
 
-背景已经谈到，超敏位点和基因表达有关，并且超敏位点反应了染色质的可及性。也就可以反推出“可及性”的染色质结构区域可能与基因表达调控相关。于是2015年的一篇文章[Transposition of native chromatin for fast and sensitive epigenomic profiling of open chromatin, DNDNA-binding proteins and nucleosome position](https://www.nature.com/articles/nmeth.2688.pdf)就使用了超敏Tn5转座酶切割染色质的开放区域，并且加上接头(adapter)进行高通量测序。
+背景已经谈到，超敏位点和基因表达有关，并且超敏位点反应了染色质的可接近性。也就可以反推出“可接近”的染色质结构区域可能与基因表达调控相关。因此，高通量测序发展后，就有文章开发基于能切割出单个核小体的MNase, 能识别超敏位点的DNase的文库建立方法。
+
+但是这些文章要求的细胞数比较多，试验步骤也比较繁琐，直到2015年，一篇文章[Transposition of native chromatin for fast and sensitive epigenomic profiling of open chromatin, DNA-binding proteins and nucleosome position](https://www.nature.com/articles/nmeth.2688.pdf)使用了超敏Tn5转座酶切割染色质的开放区域，并且加上接头(adapter)进行高通量测序方法，这就是ATAC-seq(assay for transposase-accessible chromatin using sequencing )
 
 ![Tn5转座酶切割](http://oex750gzt.bkt.clouddn.com/17-12-15/27788379.jpg)
 
-![文库构建](http://oex750gzt.bkt.clouddn.com/17-12-16/10917527.jpg)
-
-那篇文章通过ATAC-Seq得到了如下结论：
-
-- ATAC-seq insert sizes disclose nucleosome positions
-- ATAC-seq reveals patterns of nucleosome-TF spacing
-- ATAC-seq footprints **infer** factor occupancy genome wide
-- ATAC-seq enables epigenomic analysis on clinical timescales
-
-也就是说ATAC-Seq能帮助你从全基因组范围内推测可能的转录因子，还能通过比较不同时间的染色质开放区域解答发育问题。
-
-## 数据分析概要
-
-在前面的铺垫工作中，一共提到了三种酶,能切割出单个核小体的MNase, 能识别超敏位点的DNase 和ATAC-Seq所需要的Tn5 transposase，这三种酶的异同如下图：
+DNase-seq, MNase-seq和ATAC-Seq三种方法的测序区域以及短读在基因组上的分布情况见下图：
 
 ![不同酶切分析的peak差异](http://oex750gzt.bkt.clouddn.com/17-12-16/85242509.jpg)
 
 图片来源于[Reveling in the Revealed](https://www.the-scientist.com/?articles.view/articleNo/44772/title/Reveling-in-the-Revealed/)
 
-分析ATAC-Seq从本质上来看和分析ChIP-Seq没啥区别，都是peak-calling，也就是从比对得到BAM文件中找出reads覆盖区，也就是那个峰。(尴尬的是，这句话对于老司机而言是废话，对于新手而言则是他们连ChIP-Seq都不知道)那么问题集中在如何找到peak，peak的定义是啥?
+文章证明ATAC-seq和已有DNase-seq以及FAIRE-seq拥有相似的信噪比，与不同来源的DNase-seq也有很高的相关性，且组间可重复性高(R=0.98)。之后通过数据分析，得到了如下结论：
 
->“Peak不就是HOMER/MACS2/ZINBA这些peak-finder工具找到的结果吗？”
+- ATAC-seq insert sizes disclose nucleosome positions: ATAC-seq 插入片段大小揭示了核小体的位置
+- ATAC-seq reveals patterns of nucleosome-TF spacing: ATAC-seq揭示了核小体-TF 间隔模式
+- ATAC-seq footprints **infer** factor occupancy genome wide：ATAC-seq的印记能推测出全基因组转录因子位置
+- ATAC-seq enables epigenomic analysis on clinical timescales: ATAC-seq 提供为临床提供了时间维度表观分析策略
 
-找Peak就好像找美女，你觉得美女要手如柔荑，肤如凝脂，领如蝤蛴，齿如瓠犀，螓首蛾眉，巧笑倩兮，美目盼兮。但实际情况下，是先给你看一个长相平平的人或者有点缺陷的人，然后再把那个人PS一下，你就觉得是一个美女了。理想情况下， peak应该是一个对称的等腰三角形，并且底角要足够的大。实际情况下是稍微不那么平坦似乎就行了。
+也就是说ATAC-Seq能帮助你从全基因组范围内推测可能的转录因子，还能通过比较不同时间的染色质开放区域解答发育问题。
 
-假设目前已经找到了peak，这是不是意味着我们找到转录因子了？不好意思，这不存在的，因为ATAC-Seq只是找到了全基因组范围的开放区域，而这些开放区域的产生未必是转录因子引起，所以需要一些预测性工作。
+## 数据分析概要
+
+ATAC-seq数据分析大致分为如下几个步骤：
+
+1. FASTQ数据预处理：去接头、过滤低质量reads(mean phred  quality > 20) 、去除高比例N(>10%)reads
+1. 序列比对和比对后排序(Bowtie2 > 2.3.4, SAMtools > 1.7)
+1. 比对后过滤： 
+   - 移除未比对序列、非主要联配、低质量联配和重复(-F 1804 for PE)
+   - 保留正确配对短读(-f 2)
+   - 移除多比对位置序列(MAPQ < 30 )
+1. bam转换成bigwig用于可视化展示
+1. 使用MACS2进行peak calling
 
 ## 数据分析实战
 
 ### 基本信息
 
-以目前预发表在bioRxiv的文章“Chromatin accessibility changes between Arabidopsis stem cells and mesophyll cells illuminate cell type-specific transcription factor networks” 为例，介绍ATAC-Seq数据分析的套路。
+以2018年发表在Nature的文章“Chromatin analysis in human early development reveals epigenetic transition during ZGA” 为例，介绍ATAC-Seq数据分析的套路。这篇文章在原来ATAC-seq的基础上开发了一种miniATAC-seq技术， 主要是优化DNA纯化的步骤，使得只需要最低只需要20个细胞就能建库。
 
-**GEO编号**：GSE101940，一共6个样本，SRR为SRR5874657~SRR587462
+在该技术下，作者做了人类胚胎2细胞、8细胞、人胚囊萌发第五天的内细胞团（ICM)和人胚胎干细胞（ES）的ATAC-seq和mRNA-seq。作者检查了几个已知和胚胎发育有关的基因，如_NANOG_, _POU5F1_, 证明了方法的可靠性。
 
-**实验设计**：用INTACT方法提取植物干细胞(stem cell)和叶肉细胞(mesophyll cells)的细胞核，然后通过ATAC-Seq比较两者在转录因子上的差别。 前期直接提取细胞的DNA，而ATAC-Seq主要是分析染色体的开放区域，所以比对到细胞器的序列在后期分析中会被丢弃，为了提高数据的利用率，所以作者使用INTACT方法。
+![人类早期胚胎发育ATAC-seq可视化](http://oex750gzt.bkt.clouddn.com/18-5-22/95881386.jpg)
 
-**分析流程**：分为数据预处理,Peak-calling和高级分析三步。
+### 数据下载
+
+本篇文章提供的GE编号为**GSE101571**，包括人类和小鼠不同时期的ATAC-seq和mRNA-seq共计55个样本，数据量非常的大，
 
 ### 数据预处理
 
@@ -152,3 +167,44 @@ macs2 callpeak -t  # 处理文件
 - 数据库： 已知motif数据库(Cis-BP,DAP-seq)
 - 蛋白互作分析： STRING
 - 结合位点的转录因子预测：FIMO
+
+
+
+**ATAC-seq** 从分析上来看和**ChIP-seq**没啥区别，都是peak-calling，也就是从比对得到BAM文件中找出reads覆盖区，也就是那个峰。那么问题集中在如何找到peak，首先得问问自己peak的到底是啥?
+
+>“Peak不就是HOMER/MACS2这些peak-finder工具找到的结果吗？”
+
+找Peak就好像找美女，你觉得美女要手如柔荑，肤如凝脂，领如蝤蛴，齿如瓠犀，螓首蛾眉，巧笑倩兮，美目盼兮。但实际情况下，是先给你看一个长相平平的人或者有点缺陷的人，然后再把那个人PS一下，你就觉得是一个美女了。理想情况下， peak应该是一个对称的等腰三角形，并且底角要足够的大。实际情况下是稍微不那么平坦似乎就行了。
+
+首先了解一下ChIP-seq分析时会遇到的三种peak模式。第一种是单个转录因子特异性结合基因组某个区域产生的窄峰, 宽度约为100 bp; 第二种是染色质标记在基因组上的结合情况，如组蛋白修饰H3K27me3，用于修饰的核小体的靶向范围可以不同，因此修饰可以是局部事件，例如相对于启动子中核小体，也可以是大范围事件，延伸覆盖一个大的染色质结构域，所以会得到一个宽峰，长度甚至是100 kbp.  第三种则是混合模式，既有窄峰也有宽峰，数量级大概为10 Kbp.
+
+![ChIP-seq三种peak模式](http://oex750gzt.bkt.clouddn.com/18-5-22/56897678.jpg)
+
+那么ATAC-seq会得到什么样的peak模式图呢？
+
+
+
+Tn5酶只能够接近开放染色质(open chromatin)区域，该区域的核小体之间的距离可大可小，因此Tn5酶切割染色体后，会有如下几个情况：
+
+- 两个核小体间DNA，序列长度X(X > 39 bp)
+
+- 刚好一个核小体, 序列长度约为147 bp
+- 一个核小体加一段间隔区，序列长度约为147 + X bp
+- 连续N个核小体，序列长度约为 (147 X N) bp
+- 连续N个核小体加一段间隔区，序列长度约为 (147 X N) + X bp
+
+假设目前已经找到了peak，这是不是意味着我们找到转录因子了？不好意思，这不存在的，因为ATAC-Seq只是找到了全基因组范围的开放区域，而这些开放区域的产生未必是转录因子引起，所以需要一些预测性工作。
+
+在一段展开的DNA上，约119 $\AA$ 的转座同型二聚体(灰绿色)会结合到基因组序列上(蓝色)，酶的核心区(41 $\AA$)作用在9 bp 序列上，同时两翼各有将近 10 bp序列(长度约34$\AA$)，这20 bp序列由于空间阻碍不可能被转座酶结合，所以不会被攻击。由于核心区域在这个过程中出现了两次，因此转座事件最小间隔空间大约为38 bp.
+
+![Tn5酶作用方式](http://oex750gzt.bkt.clouddn.com/18-5-22/85042079.jpg)
+
+## 参考文献
+
+- Transposition of native chromatin for fast and sensitive epigenomic profiling of open chromatin, DNDNA-binding proteins and nucleosome position
+- Sequencing depth and coverage: key considerations in genomic analyses
+- Chromatin analysis in human early development reveals epigenetic transition during ZGA
+- Rapid, low-input, low-bias construction of shotgun fragment libraries by high-density in vitro transposition
+- [ENCODE 分析流程](https://www.encodeproject.org/atac-seq/#standards)
+- [Cistrome 分析流程](http://cistrome.org/db/#/about)
+- [pyflow-ATACseq](https://github.com/crazyhottommy/pyflow-ATACseq)

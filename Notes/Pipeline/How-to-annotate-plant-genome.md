@@ -474,19 +474,75 @@ find . -regex ".*evm.out.gff3" -exec cat {} \; | bedtools sort -i - > EVM.all.gf
 
 当前权重设置下，EVM的结果更加严格，需要按照实际情况调整，增加其他证据。
 
-#### 07-使用PASA更新EVM结果
+#### 06-可选步骤
 
-EVM结果不包括UTR区域和可变剪切的注释信息，可以使用PASA进行更新。然而这部分已经无法逃避MySQL, 服务器上并没有MySQL的权限，我需要学习Perl脚本进行修改。因此基因结构注释到此先放一放。
+**注释过滤**：对于初步预测得到的基因，还可以稍微优化一下，例如剔除编码少于50个AA的预测结果，将转座子单独放到一个文件中(软件有TransposonPSI)。
 
-#### 08-注释优化
+这里基于`gffread`先根据注释信息提取所有的CDS序列，过滤出长度不足50AA的序列，基于这些序列过滤原来的的注释
 
-对于初步预测得到的基因，还可以稍微优化一下，例如剔除编码少于50个AA的预测结果，将转座子单独放到一个文件中(基于TransposonPSI)。
+```bash
+gffread EVM.all.gff -g input/genome.fa -y tr_cds.fa
+bioawk -c fastx '$seq < 50 {print $comment}' tr_cds.fa | cut -d '=' -f 2 > short_aa_gene_list.txt
+grep -v -w -f short_aa_gene_list.txt EvM.all.gff > filter.gff
+```
 
-最后可以将平均的转录本长度，平均CDS长度和平均每个基因的外显子数目统计到一个表格中。
+**使用PASA更新EVM结果**：EVM结果不包括UTR区域和可变剪切的注释信息，可以使用PASA进行更新。然而这部分已经无法逃避MySQL, 服务器上并没有MySQL的权限，我需要学习Perl脚本进行修改。因此基因结构注释到此先放一放。
+
+#### 07-基因编号
+
+对每个基因实现编号，形如ABCD000010的效果，方便后续分析。如下代码是基于EVM.all.gff，使用方法为`python gffrename.py EVM_output.gff prefix > renamed.gff`.
+
+```bash
+#!/usr/bin/env python3
+import re
+import sys
+
+if len(sys.argv) < 3:
+    sys.exit()
+
+gff = open(sys.argv[1])
+prf = sys.argv[2]
+
+count = 0
+mRNA  = 0
+cds   = 0
+exon  = 0
+
+print("##gff-version 3.2.1")
+for line in gff:
+    if not line.startswith("\n"):
+        records = line.split("\t")
+        records[1] = "."
+    if re.search(r"\tgene\t", line):
+        count = count + 10
+        mRNA  = 0
+        gene_id = prf + str(count).zfill(6)
+        records[8] = "ID={}".format(gene_id)
+    elif re.search(r"\tmRNA\t", line):
+        cds   = 0
+        exon  = 0
+        mRNA  = mRNA + 1
+        mRNA_id    = gene_id + "." + str(mRNA)
+        records[8] = "ID={};Parent={}".format(mRNA_id, gene_id)
+    elif re.search(r"\texon\t", line):
+        exon     = exon + 1
+        exon_id  = mRNA_id + "_exon_" + str(exon) 
+        records[8] = "ID={};Parent={}".format(exon_id, mRNA_id)
+    elif re.search(r"\tCDS\t", line):
+        cds     = cds + 1
+        cds_id  = mRNA_id + "_cds_" + str(cds) 
+        records[8] = "ID={};Parent={}".format(cds_id, mRNA_id)
+    else:
+        continue
+
+    print("\t".join(records))
+
+gff.close()
+```
 
 #### 一些经验
 
-如果有转录组数据，没必须要使用太多的从头预测工具，braker2 加 GlimmerHMM可能就够用了, 更多是使用PASA和
+如果有转录组数据，没必须要使用太多的从头预测工具，braker2 加 GlimmerHMM可能就够用了, 更多是使用PASA和StringTie利用好转录组数据进行注释。
 
 ### 基因功能注释
 
