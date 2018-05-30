@@ -6,6 +6,21 @@ notebook: *NIX基础
 
 <!-- @import "[TOC]" {cmd="toc" depthFrom=1 depthTo=6 orderedList=false} -->
 
+<!-- code_chunk_output -->
+
+* [无root权限下解决编译时的依赖问题](#无root权限下解决编译时的依赖问题)
+	* [Linux的编译体系](#linux的编译体系)
+	* [编译环境变量](#编译环境变量)
+	* [GCC安装(非必要)](#gcc安装非必要)
+	* [CMake: 平台无关的编译软件](#cmake-平台无关的编译软件)
+	* [几个必须要装的函数库](#几个必须要装的函数库)
+	* [编译案例](#编译案例)
+		* [安装zsh](#安装zsh)
+		* [编译tmux](#编译tmux)
+		* [编译R语言](#编译r语言)
+
+<!-- /code_chunk_output -->
+
 # 无root权限下解决编译时的依赖问题
 
 如果你拥有最高权限，如果你只管理一台服务器，那么系统自带的包管理工具就帮你解决了所有问题。但是真实世界没有那么美好，所以我花了那么久时间去学习如何从源码开始编译一个软件。
@@ -24,7 +39,7 @@ notebook: *NIX基础
 
 首先，一个C/C++工程不可能只用到标准库，很多已有的轮子就不需要重复制造。其次，由于很多软件都重复用到相同的依赖库，那么如果把这些依赖库独立成单独的模块，在调用的时候加载，也能节省空间。早期为了适配多个平台，开发人员需要手写条件语句来检查环境依赖，后来GNU专门开发了Autotools辅助构建源码编译所需要的关键文件。
 
-![](http://oex750gzt.bkt.clouddn.com/17-11-27/51990083.jpg)
+![Autotools](http://oex750gzt.bkt.clouddn.com/17-11-27/51990083.jpg)
 
 ## 编译环境变量
 
@@ -121,7 +136,7 @@ tar -zxvf gcc-7.2.0.tar.gz && cd gcc-7.2.0
 ls
 ```
 
-![](http://oex750gzt.bkt.clouddn.com/17-11-25/81177905.jpg)
+![check](http://oex750gzt.bkt.clouddn.com/17-11-25/81177905.jpg)
 
 **第二步**， 检查系统是否已经具备前置软件, 主要是GMP，MPFR, MPC。这些软件可以到<ftp://gcc.gnu.org/pub/gcc/infrastructure/>找到，然后下载后解压缩，并移动到gcc源码文件夹下。 可以在配置的时候用`--with-gmp, --with-mpfr --with-mpc`指定具体所在路径。
 

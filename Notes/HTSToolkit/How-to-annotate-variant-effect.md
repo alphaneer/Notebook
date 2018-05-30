@@ -39,14 +39,14 @@ java -jar snpEff.jar download Arabidopsis_thaliana
 
 如果你仔细观察搜索数据库时的提示信息，你会发现一串神奇的地址，这个地址里面就是已经配置好的数据库的下载地址，因此我们只要自己下载并解压就ok了。
 
-![](http://oex750gzt.bkt.clouddn.com/17-12-28/69477217.jpg)
+![下载结果](http://oex750gzt.bkt.clouddn.com/17-12-28/69477217.jpg)
 
 ```bash
 wget http://downloads.sourceforge.net/project/snpeff/databases/v4_3/snpEff_v4_3_ENSEMBL_BFMPP_32_24.zip
 unzip snpEff_v4_3_ENSEMBL_BFMPP_32_24.zip
 ```
 
-挤压之后项目文件长下面这个样子
+解压之后项目文件长下面这个样子
 
 ```bash
 tree -d snpEff_v4_3_ENSEMBL_BFMPP_32_24
@@ -94,7 +94,7 @@ curl ftp://ftp.arabidopsis.org/home/tair/Genes/TAIR10_genome_release/TAIR10_chro
 
 一件比较尴尬的事情是，直接下载基因组序列和注释文件的第一列有可能对不上，因为染色体命名存在ensemble和NCBI两套体系。
 
-![](http://oex750gzt.bkt.clouddn.com/17-12-28/37143155.jpg)
+![命名体系](http://oex750gzt.bkt.clouddn.com/17-12-28/37143155.jpg)
 
 这就需要你用`sed`或者`awk`修改了。
 
@@ -102,7 +102,7 @@ curl ftp://ftp.arabidopsis.org/home/tair/Genes/TAIR10_genome_release/TAIR10_chro
 
 在Non-standard Databases中新增一行`xxx.genome : 物种名`, 其中xxx要和之前的xxx.fa(参考序列)命名相同，也和之前创建的文件夹名相同。
 
-![](http://oex750gzt.bkt.clouddn.com/17-12-28/8941595.jpg)
+![修改配置文件](http://oex750gzt.bkt.clouddn.com/17-12-28/8941595.jpg)
 
 **step3**: 构建数据库
 
@@ -114,7 +114,7 @@ java -jar snpEff.jar build -v TAIR10 2>&1 | tee TAIR10.build
 
 根据运行日志，可知如下是snpEff用于读取的文件及其路径。
 
-![](http://oex750gzt.bkt.clouddn.com/17-12-28/74088909.jpg)
+![运行日志](http://oex750gzt.bkt.clouddn.com/17-12-28/74088909.jpg)
 
 [官方文档](http://snpeff.sourceforge.net/SnpEff_manual.html#databases)还提供了RefSeq和GenBank文件构建数据库的方式。
 

@@ -20,7 +20,7 @@ deeptools是基于Python开发的一套工具，用于处理诸如RNA-seq, ChIP-
 
 官方文档见<http://deeptools.readthedocs.io/en/latest/index.html>, 下面按照用法引入不同的工具。
 
-![](http://deeptools.readthedocs.io/en/latest/_images/start_workflow1.png)
+![deeptools](http://deeptools.readthedocs.io/en/latest/_images/start_workflow1.png)
 
 > 后续演示的数据来自于_Orchestration of the Floral Transition and Floral Development in Arabidopsis by the Bifunctional Transcription Factor APETALA2_，如要重复请自行下载比对。
 
