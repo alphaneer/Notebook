@@ -33,6 +33,10 @@ wget -c -q ftp://ftp.sra.ebi.ac.uk/vol1/ERA111/ERA1116569/fastq/il_2.fq.gz
 
 > PacBio的smrtlink工具套装大小为1.4G，不但下载速度慢，安装也要手动确认各种我不清楚的选项, 唯一好处就是工具很全。
 
+### 使用Falcon进行组装
+
+Falcon是PacBio公司开发的用于自家SMRT产出数据的基因组组装工具。对于刚接触
+
 ### 使用Canu进行组装
 
 Canu是Celera的继任者，能用于组装PacBio和Nanopore两家公司得到的测序结果。Canu流程能自动检测服务器可用资源进行分配，使用渐进K-mer权重提高运行效率，能自动估计错误率，构建稀疏图并能输出GFA(grpahical fragment assembly)格式用于可视化展示(Bandage支持该格式)。
